@@ -182,6 +182,7 @@
     let currentQuestionIndex = 0;
     let currentQuestionData = null;
     let hasSubmitted = false;
+    let groupSelections = [];
 
     // --- MUSIC ---
     let player;
@@ -214,18 +215,17 @@
         const pass = document.getElementById('pass-id').value;
         if(!name || !pass) return alert("Fill Name and Password");
 
-        // Reveal the main workspace
-        document.getElementById('main-wrapper').style.display = 'block';
-
         if(group.trim() === "") {
             if(pass !== "renz123") return alert("Admin Password Incorrect");
             currentRole = "leader";
             document.getElementById('admin-ui').style.display = 'flex';
+            document.getElementById('main-wrapper').style.display = 'block';
         } else {
             currentRole = "player";
             myGroup = group;
             document.getElementById('group-display').innerText = "GROUP: " + group;
             document.getElementById('waiting-screen').style.display = 'flex';
+            document.getElementById('main-wrapper').style.display = 'block';
         }
         myUsername = name;
         document.getElementById('login-screen').style.display = 'none';
@@ -238,15 +238,15 @@
 
 [Image of the human respiratory system]
 
+
     function toggleZoom(e) { 
-        // Only zoom if the background image is clicked, not a button
         if(e.target.classList.contains('base-img')) {
             document.getElementById('zoom-container').classList.toggle('zoomed'); 
         }
     }
 
     function showData(e, title, desc) {
-        if(e) e.stopPropagation(); // Stop zoom from firing
+        if(e) e.stopPropagation(); 
         document.getElementById('mTitle').innerText = title;
         document.getElementById('mDesc').innerText = desc;
         document.getElementById('modal').classList.add('active');
@@ -277,6 +277,11 @@
         }
     }
 
+    function adminCloseQuiz() {
+        socket.emit('close-quiz-manual');
+        resetQuizUI();
+    }
+
     function resetQuizUI() {
         document.getElementById('close-btn').style.display = 'none';
         document.getElementById('start-btn').style.display = 'block';
@@ -295,6 +300,7 @@
     socket.on('show-quiz-overlay', (data) => {
         quizActive = true;
         hasSubmitted = false;
+        groupSelections = [];
         currentQuestionData = data;
         if(currentRole === "player") playRandomMusic();
         
@@ -302,6 +308,7 @@
         const optionsBox = document.getElementById('quiz-options');
         overlay.style.display = 'flex';
         document.getElementById('question-text').innerText = data.question;
+        document.getElementById('clicks-remaining').innerText = `Clicks: 0/${data.correctIndices.length}`;
         optionsBox.innerHTML = "";
         
         data.options.forEach((opt, idx) => {
@@ -320,16 +327,74 @@
             document.getElementById('global-timer').innerText = timeLeft;
             if(timeLeft <= 0) {
                 clearInterval(currentCountdown);
-                closeQuizOverlay();
+                handleTimeUp();
             }
         }, 1000);
+    });
+
+    function handleOptionClick(idx, btn, maxClicks) {
+        if(!quizActive || currentRole === "leader" || btn.disabled) return;
+        socket.emit('group-selection-attempt', {
+            group: myGroup,
+            optionIndex: idx,
+            maxClicks: maxClicks
+        });
+    }
+
+    socket.on('group-selection-update', (data) => {
+        const btn = document.getElementById("opt-" + data.optionIndex);
+        if(!btn) return;
+        btn.disabled = true;
+        btn.classList.add('player-selected');
+        groupSelections = data.selectionsSoFar;
+        document.getElementById('clicks-remaining').innerText = `Clicks: ${groupSelections.length}/${data.maxClicks}`;
+        
+        if(groupSelections.length >= data.maxClicks && !hasSubmitted && currentRole === "player") {
+            submitScore();
+        }
+    });
+
+    function submitScore() {
+        hasSubmitted = true;
+        let correctCount = groupSelections.filter(idx => currentQuestionData.correctIndices.includes(idx)).length;
+        let points = correctCount * 10;
+        myScore += points;
+        document.getElementById('p-score-board').innerText = myScore;
+        socket.emit('score-update', { username: myUsername, group: myGroup, score: myScore });
+    }
+
+    function handleTimeUp() {
+        quizActive = false;
+        stopMusic();
+        if(currentRole === "leader") {
+            document.getElementById('close-btn').style.display = 'block';
+        } else if(!hasSubmitted) {
+            submitScore();
+        }
+        setTimeout(closeQuizOverlay, 3000);
+    }
+
+    socket.on('update-leaderboard', (leaderboard) => {
+        const list = document.getElementById('rank-list');
+        list.innerHTML = "";
+        Object.entries(leaderboard).sort((a,b) => b[1]-a[1]).forEach(([name, score]) => {
+            const div = document.createElement('div');
+            div.className = "rank-item";
+            div.innerHTML = `<span><b>${name}</b></span> <span class="group-pill">${score} PTS</span>`;
+            list.appendChild(div);
+        });
+    });
+
+    socket.on('hide-quiz-overlay', closeQuizOverlay);
+    socket.on('group-members-update', (count) => {
+        const el = document.getElementById('group-members-count');
+        if(el) el.innerText = `Group Members Online: ${count}`;
     });
 
     function toggleRank() { 
         document.getElementById('leaderboard').classList.toggle('minimized'); 
     }
 
-    // Cleanup on close
     window.addEventListener('beforeunload', () => {
         socket.emit('user-leave', { username: myUsername, group: myGroup });
     });
