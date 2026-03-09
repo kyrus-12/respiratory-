@@ -15,13 +15,10 @@
         }
 
         body {
-            margin: 0;
-            background: var(--bg-color);
+            margin: 0; background: var(--bg-color);
             font-family: 'Segoe UI', system-ui, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; overflow: hidden;
         }
 
         /* --- LOGIN & WAITING --- */
@@ -51,15 +48,18 @@
 
         /* --- MINIMIZABLE RANKING (UPPER LEFT) --- */
         #leaderboard {
-            position: absolute; top: 15px; left: 15px; width: 200px;
+            position: absolute; top: 15px; left: 15px; width: 220px;
             background: white; border-radius: 10px; padding: 12px;
             box-shadow: var(--btn-shadow); z-index: 6000; transition: 0.3s;
         }
-        #leaderboard.minimized { width: 45px; height: 45px; overflow: hidden; padding: 5px; }
+        #leaderboard.minimized { width: 60px; height: 30px; overflow: hidden; cursor: pointer; background: var(--primary); }
+        #leaderboard.minimized .rank-content, #leaderboard.minimized h3 { display: none; }
+        #leaderboard.minimized::after { content: "RANK"; color: white; font-weight: 900; font-size: 12px; display: flex; justify-content: center; align-items: center; height: 100%; }
+        
         .rank-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .rank-header h3 { margin: 0; font-size: 0.9rem; color: var(--primary); }
-        .toggle-rank { cursor: pointer; background: var(--primary); color: white; border: none; border-radius: 4px; padding: 2px 8px; font-weight: bold; }
-        .rank-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee; font-size: 0.8rem; color: #333; }
+        .toggle-rank { cursor: pointer; background: var(--accent); color: white; border: none; border-radius: 4px; padding: 2px 8px; font-weight: bold; }
+        .rank-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.85rem; color: #333; }
 
         /* --- WRAPPER & DIAGRAM --- */
         .wrapper {
@@ -68,10 +68,7 @@
             overflow: hidden; display: none;
         }
 
-        #zoom-container {
-            position: relative; width: 100%; height: 100%;
-            transition: transform 0.5s ease; cursor: zoom-in;
-        }
+        #zoom-container { position: relative; width: 100%; height: 100%; transition: transform 0.5s ease; cursor: zoom-in; }
         #zoom-container.zoomed { transform: scale(1.7); }
         .base-img { width: 100%; height: 100%; object-fit: contain; }
 
@@ -79,20 +76,19 @@
             position: absolute; background: #ffffff; border: 2px solid; border-radius: 6px;
             font-size: clamp(8px, 1.1vw, 12px); font-weight: 800; cursor: pointer; z-index: 20;
             display: flex; align-items: center; justify-content: center; text-align: center;
-            box-shadow: var(--btn-shadow); transition: 0.2s; width: 200px; height: 50px;
+            box-shadow: var(--btn-shadow); transition: 0.2s; width: 180px; height: 45px;
         }
 
         .title-btn {
             position: absolute; top: 4%; left: 50%; transform: translateX(-50%);
-            width: 500px; height: 70px; background: #2c3e50; color: white;
-            border: 3px solid #34495e; border-radius: 12px; font-size: 22px;
+            width: 450px; height: 60px; background: #2c3e50; color: white;
+            border: 3px solid #34495e; border-radius: 12px; font-size: 20px;
             font-weight: 900; cursor: pointer; z-index: 30; box-shadow: 0 8px 20px rgba(0,0,0,0.3);
         }
 
         .admin-controls { position: absolute; top: 15px; right: 15px; z-index: 100; }
         .trigger-btn { background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
-        /* NODES */
         .tap-node {
             position: absolute; width: 10px; height: 10px; border-radius: 50%;
             border: 2px solid white; cursor: pointer; z-index: 25;
@@ -105,17 +101,16 @@
             100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); }
         }
 
-        /* MODAL */
         .modal {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8);
-            width: 85%; max-width: 450px; background: white; padding: 25px;
+            width: 85%; max-width: 400px; background: white; padding: 20px;
             border-radius: 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.4);
             visibility: hidden; opacity: 0; transition: 0.3s; z-index: 3000;
         }
         .modal.active { visibility: visible; opacity: 1; transform: translate(-50%, -50%) scale(1); }
-        .media-box { width: 100%; height: 220px; background: #000; border-radius: 12px; margin-top: 15px; overflow: hidden; }
+        .media-box { width: 100%; height: 200px; background: #000; border-radius: 12px; margin-top: 15px; overflow: hidden; }
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; z-index: 2000; }
-        .close-btn { float: right; font-size: 30px; cursor: pointer; color: #ff4757; font-weight: bold; }
+        .close-btn { float: right; font-size: 25px; cursor: pointer; color: #ff4757; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -124,52 +119,52 @@
     <div class="login-box">
         <h2>AIGHAM Portal</h2>
         <input type="text" id="user-name" placeholder="Name">
-        <input type="text" id="group-id" placeholder="Group ID (Empty for Leader)">
+        <input type="text" id="group-id" placeholder="Group (Leave empty for Leader)">
         <input type="password" id="pass-id" placeholder="Password">
-        <button class="trigger-btn" style="width:100%" onclick="login()">Enter System</button>
+        <button class="trigger-btn" style="width:100%" onclick="login()">Connect</button>
     </div>
 </div>
 
 <div id="waiting-screen">
-    <h1>Student Portal</h1>
-    <div id="p-score-board" style="font-size: 2.5rem;">Score: 0</div>
-    <p>Waiting for the leader to trigger the quiz...</p>
+    <h1>Student Dashboard</h1>
+    <div id="p-score-board" style="font-size: 3rem; color: var(--success); font-weight: bold;">0</div>
+    <p>Waiting for instructions from the Leader...</p>
 </div>
 
 <div id="quiz-overlay">
-    <h1 id="timer-display" style="font-size: 3rem; margin:0;">10</h1>
-    <h2 id="question-text">Quiz Question</h2>
+    <h1 id="timer-display" style="font-size: 4rem; margin:0;">10</h1>
+    <h2 id="question-text" style="text-align:center; padding: 0 20px;">Quiz</h2>
     <div class="quiz-options" id="quiz-options"></div>
-    <p style="margin-top:15px; color:#ccc;">Remaining Clicks: <span id="clicks-left">0</span></p>
+    <p style="margin-top:15px; color:#aaa;">Select all correct answers. Remaining: <span id="clicks-left">0</span></p>
 </div>
 
 <div class="overlay" id="overlay" onclick="closeModal()"></div>
 
 <div class="wrapper" id="main-wrapper">
-    <div id="leaderboard">
+    <div id="leaderboard" onclick="if(this.classList.contains('minimized')) toggleRank()">
         <div class="rank-header">
-            <h3>Top Scorers</h3>
-            <button class="toggle-rank" onclick="toggleRank()">–</button>
+            <h3>Leaderboard</h3>
+            <button class="toggle-rank" onclick="event.stopPropagation(); toggleRank()">–</button>
         </div>
-        <div id="rank-list"></div>
+        <div id="rank-list" class="rank-content">
+            <p style="font-size: 0.7rem; color: #999;">No players active...</p>
+        </div>
     </div>
 
     <div class="admin-controls" id="admin-ui" style="display:none;">
-        <button class="trigger-btn" onclick="startNewQuestion()">🚀 TRIGGER QUIZ</button>
+        <button class="trigger-btn" onclick="startNewQuestion()">🚀 START QUIZ</button>
     </div>
 
     <div id="zoom-container" onclick="toggleZoom(event)">
         <img src="https://imgur.com/5YQmThC.png" class="base-img">
-
-        <button class="title-btn" onclick="showData('Respiratory System', 'System for oxygen intake.', 'video')">RESPIRATORY SYSTEM</button>
-
-        <button class="cover-btn" style="top: 18%; left: 8%; border-color: #ff4757; width: 160px;" onclick="showData('Nasal Cavity', 'Filters air.', 'video')">Nasal Cavity</button>
-        <button class="cover-btn" style="top: 27%; left: 5%; border-color: #2ed573;" onclick="showData('Nostril', 'Air entrance.', 'text')">Nostril</button>
-        <button class="cover-btn" style="top: 36%; left: 5%; border-color: #1e90ff;" onclick="showData('Soft Palate', 'Closes nasal passages.', 'image')">Soft Palate</button>
-        <button class="cover-btn" style="top: 61%; left: 9%; border-color: #48dbfb;" onclick="showData('Trachea', 'Windpipe.', 'video')">Trachea</button>
-        <button class="cover-btn" style="top: 89%; right: 10%; border-color: #222f3e;" onclick="showData('Diaphragm', 'Main muscle.', 'video')">Diaphragm</button>
-        <div class="tap-node" style="top: 37%; left: 42%; background: #ff4757;" onclick="showData('Nasal Point', 'Cilia filtration.', 'image')"></div>
-        <div class="tap-node" style="top: 57%; left: 48%; background: #48dbfb;" onclick="showData('Trachea Tip', 'Windpipe tube.', 'video')"></div>
+        <button class="title-btn" onclick="showData('Respiratory System', 'The network of organs that help you breathe.', 'video')">RESPIRATORY SYSTEM</button>
+        
+        <button class="cover-btn" style="top: 18%; left: 8%; border-color: #ff4757;" onclick="showData('Nasal Cavity', 'Warms and filters air.', 'video')">Nasal Cavity</button>
+        <button class="cover-btn" style="top: 61%; left: 9%; border-color: #48dbfb;" onclick="showData('Trachea', 'The main windpipe.', 'video')">Trachea</button>
+        <button class="cover-btn" style="top: 89%; right: 10%; border-color: #222f3e;" onclick="showData('Diaphragm', 'Muscle for breathing.', 'video')">Diaphragm</button>
+        
+        <div class="tap-node" style="top: 37%; left: 42%; background: #ff4757;" onclick="showData('Nasal Point', 'Filter check.', 'image')"></div>
+        <div class="tap-node" style="top: 57%; left: 48%; background: #48dbfb;" onclick="showData('Trachea Tip', 'Tube entry.', 'video')"></div>
     </div>
 </div>
 
@@ -194,10 +189,10 @@
         const pass = document.getElementById('pass-id').value;
         const MASTER_PASS = "renz123"; 
 
-        if(!name || !pass) return alert("Please fill all fields");
+        if(!name || !pass) return alert("All fields required");
 
         if(group === "") {
-            if(pass !== MASTER_PASS) return alert("Invalid Admin Password");
+            if(pass !== MASTER_PASS) return alert("Invalid Admin Access");
             currentRole = "leader";
             document.getElementById('admin-ui').style.display = 'block';
             document.getElementById('main-wrapper').style.display = 'block';
@@ -216,18 +211,26 @@
 
     function startNewQuestion() {
         const quizData = {
-            question: "Identify the components of the Respiratory System:",
-            options: ["Nasal Cavity", "Trachea", "Liver", "Stomach"],
+            question: "Which parts are essential for the Respiratory process?",
+            options: ["Nasal Cavity", "Trachea", "Small Intestine", "Gallbladder"],
             correctIndices: [0, 1] 
         };
         socket.emit('trigger-question', quizData);
     }
 
+    // --- UPDATED LEADERBOARD SYNC ---
     socket.on('update-leaderboard', (data) => {
-        playersData[data.username] = data.score;
+        // Sync the local object with incoming data
+        if(data.fullList) {
+            playersData = data.fullList;
+        } else {
+            playersData[data.username] = data.score;
+        }
+        
         const list = document.getElementById('rank-list');
         list.innerHTML = "";
         const sorted = Object.entries(playersData).sort((a, b) => b[1] - a[1]);
+        
         sorted.forEach(([user, score]) => {
             const div = document.createElement('div');
             div.className = "rank-item";
@@ -256,15 +259,12 @@
                     if(data.correctIndices.includes(idx)) {
                         btn.classList.add('selected-correct');
                         myScore += 10;
-                        document.getElementById('p-score-board').innerText = "Score: " + myScore;
+                        document.getElementById('p-score-board').innerText = myScore;
                         socket.emit('score-update', { username: myUsername, score: myScore });
                     }
                     clicksRemaining--;
                     document.getElementById('clicks-left').innerText = clicksRemaining;
                     btn.disabled = true;
-                    if(clicksRemaining === 0) {
-                        document.querySelectorAll('.quiz-opt').forEach(b => b.disabled = true);
-                    }
                 }
             };
             optionsBox.appendChild(btn);
@@ -281,7 +281,6 @@
         }, 1000);
     });
 
-    // Original UI Functions
     function toggleZoom(e) {
         if(e.target.tagName !== 'BUTTON' && e.target.className !== 'tap-node') {
             document.getElementById('zoom-container').classList.toggle('zoomed');
@@ -297,8 +296,6 @@
             mediaBox.innerHTML = '<iframe width="100%" height="100%" src="https://www.youtube.com/embed/mOKmjYwfDGU" frameborder="0" allowfullscreen></iframe>';
         } else if(type === 'image') {
             mediaBox.innerHTML = `<img src="https://picsum.photos/seed/${title}/400/300" style="width:100%; height:100%; object-fit:cover;">`;
-        } else {
-            mediaBox.innerHTML = `<div style="padding:20px; color:white; text-align:center;">Information for ${title} is ready.</div>`;
         }
         document.getElementById('modal').classList.add('active');
         document.getElementById('overlay').style.display = 'block';
