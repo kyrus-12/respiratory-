@@ -43,22 +43,9 @@
             flex-direction: column; justify-content: center; align-items: center; color: white;
         }
         .quiz-close-btn {
-            position: absolute;
-            top: 20px;
-            right: 30px;
-            background: transparent;
-            border: none;
-            color: white;
-            font-size: 2.5rem;
-            cursor: pointer;
-            z-index: 5001;
-            transition: 0.3s;
-            padding: 10px;
-            line-height: 1;
-        }
-        .quiz-close-btn:hover {
-            color: var(--accent);
-            transform: scale(1.2);
+            position: absolute; top: 20px; right: 30px;
+            background: transparent; border: none; color: white;
+            font-size: 2.5rem; cursor: pointer; z-index: 5001; transition: 0.3s;
         }
         .quiz-timer { font-size: 4rem; font-weight: 900; color: var(--accent); margin-bottom: 10px; }
         .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 80%; max-width: 600px; margin-top: 20px; }
@@ -66,8 +53,9 @@
         .quiz-opt:hover:not(:disabled) { background: #4a6278; transform: translateY(-2px); }
         .correct-reveal { background: var(--success) !important; box-shadow: 0 0 20px var(--success); transform: scale(1.05); }
         .wrong-reveal { background: #e74c3c !important; }
+        .selected-pending { border: 3px solid #f1c40f; background: #2c3e50; }
 
-        /* --- LEADERBOARD (UPPER LEFT) --- */
+        /* --- LEADERBOARD --- */
         #leaderboard {
             position: absolute; top: 15px; left: 15px; width: 260px;
             background: white; border-radius: 10px; padding: 12px;
@@ -75,14 +63,10 @@
         }
         #leaderboard.minimized { width: 60px; height: 30px; overflow: hidden; cursor: pointer; background: var(--primary); }
         #leaderboard.minimized .rank-content, #leaderboard.minimized h3 { display: none; }
-        #leaderboard.minimized::after { content: "RANK"; color: white; font-weight: 900; font-size: 12px; display: flex; justify-content: center; align-items: center; height: 100%; }
-        
-        .rank-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
-        .rank-header h3 { margin: 0; font-size: 0.9rem; color: var(--primary); }
-        .rank-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f9f9f9; font-size: 0.9rem; color: #333; }
-        .group-pill { background: #eee; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; color: #666; font-weight: bold; }
+        .rank-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; }
+        .rank-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f9f9f9; font-size: 0.9rem; color: #333; }
+        .group-pill { background: #eee; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
 
-        /* --- WRAPPER & UI --- */
         .wrapper {
             position: relative; width: 98vw; max-width: 1000px; aspect-ratio: 3 / 2;
             background: white; border-radius: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
@@ -91,21 +75,14 @@
         #zoom-container { position: relative; width: 100%; height: 100%; transition: transform 0.5s ease; cursor: zoom-in; }
         #zoom-container.zoomed { transform: scale(1.7); }
         .base-img { width: 100%; height: 100%; object-fit: contain; }
-
         .admin-controls { position: absolute; top: 15px; right: 15px; z-index: 100; display: flex; gap: 10px; }
-        .trigger-btn { background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: var(--btn-shadow); }
+        .trigger-btn { background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .close-quiz-btn { background: #f39c12; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; display: none; }
-
-        .cover-btn {
-            position: absolute; background: #ffffff; border: 2px solid; border-radius: 6px;
-            font-size: clamp(8px, 1.1vw, 12px); font-weight: 800; cursor: pointer; z-index: 20;
-            box-shadow: var(--btn-shadow); width: 180px; height: 45px;
-        }
+        .cover-btn { position: absolute; background: #ffffff; border: 2px solid; border-radius: 6px; font-weight: 800; cursor: pointer; width: 180px; height: 45px; }
 
         .modal {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8);
-            width: 85%; max-width: 400px; background: white; padding: 20px;
-            border-radius: 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+            width: 85%; max-width: 400px; background: white; padding: 20px; border-radius: 20px;
             visibility: hidden; opacity: 0; transition: 0.3s; z-index: 3000;
         }
         .modal.active { visibility: visible; opacity: 1; transform: translate(-50%, -50%) scale(1); }
@@ -125,7 +102,6 @@
 </div>
 
 <div id="waiting-screen">
-    <div class="quiz-timer" id="wait-timer" style="display:none;">10</div>
     <h1>Student Dashboard</h1>
     <div id="p-score-board" style="font-size: 4rem; color: var(--success); font-weight: bold;">0</div>
     <p id="group-display" style="font-weight:bold; color:#ecf0f1;"></p>
@@ -133,11 +109,11 @@
 </div>
 
 <div id="quiz-overlay">
-    <button class="quiz-close-btn" onclick="closeQuizOverlay()" title="Close Quiz">×</button>
+    <button class="quiz-close-btn" onclick="closeQuizOverlay()">×</button>
     <div class="quiz-timer" id="global-timer">10</div>
     <h2 id="question-text" style="text-align:center;">Question</h2>
     <div class="quiz-options" id="quiz-options"></div>
-    <p id="status-text" style="margin-top:20px; color:#f1c40f;">Hurry! Choose correctly!</p>
+    <p id="status-text" style="margin-top:20px; color:#f1c40f;">Hurry!</p>
 </div>
 
 <div class="overlay" id="overlay" onclick="closeModal()"></div>
@@ -152,7 +128,7 @@
     </div>
 
     <div class="admin-controls" id="admin-ui" style="display:none;">
-        <button id="start-btn" class="trigger-btn" onclick="startNewQuestion()">🚀 START QUIZ</button>
+        <button id="start-btn" class="trigger-btn" onclick="startNewQuestion()">🚀 START NEXT QUESTION</button>
         <button id="close-btn" class="close-quiz-btn" onclick="adminCloseQuiz()">🛑 CLOSE MODAL</button>
     </div>
 
@@ -178,14 +154,21 @@
     let myScore = 0;
     let quizActive = false;
     let currentCountdown = null;
-    let hasAnswered = false;
+    let currentQuestionIndex = 0;
+
+    const allQuizData = [
+        { question: "Which of these are types of energy?", options: ["Kinetic", "Potential", "Chemical", "Electrical"], correctIndices: [0, 1, 2, 3], timer: 15 },
+        { question: "Identify the primary colors (in Art):", options: ["Red", "Green", "Blue", "Yellow"], correctIndices: [0, 2, 3], timer: 10 },
+        { question: "Select the planets in our solar system:", options: ["Mars", "Jupiter", "Andromeda", "Venus"], correctIndices: [0, 1, 3], timer: 12 },
+        { question: "Which of the following are fruits?", options: ["Carrot", "Apple", "Banana", "Potato"], correctIndices: [1, 2], timer: 8 },
+        { question: "Choose the even numbers:", options: ["1", "2", "3", "4", "5", "6"], correctIndices: [1, 3, 5], timer: 10 }
+    ];
 
     function login() {
         const name = document.getElementById('user-name').value;
         const group = document.getElementById('group-id').value;
         const pass = document.getElementById('pass-id').value;
-        
-        if(!name || !pass) return alert("Please fill Name and Password");
+        if(!name || !pass) return alert("Fill Name and Password");
 
         if(group.trim() === "") {
             if(pass !== "renz123") return alert("Admin Password Incorrect");
@@ -198,7 +181,6 @@
             document.getElementById('group-display').innerText = "GROUP: " + group;
             document.getElementById('waiting-screen').style.display = 'flex';
         }
-        
         myUsername = name;
         document.getElementById('login-screen').style.display = 'none';
         socket.emit('user-join', { username: name, group: group, role: currentRole });
@@ -206,63 +188,17 @@
 
     function toggleRank() { document.getElementById('leaderboard').classList.toggle('minimized'); }
 
-    // --- ADMIN LOGIC ---
-    let currentQuestionIndex = 0; // Initialize a variable to keep track of the current question
-
-function startNewQuestion() {
-    const allQuizData = [
-        {
-            question: "Which of these are types of energy?",
-            options: ["Kinetic", "Potential", "Chemical", "Electrical"],
-            correctIndices: [0, 1, 2, 3],
-            timer: 15
-        },
-        {
-            question: "Identify the primary colors:",
-            options: ["Red", "Green", "Blue", "Yellow"],
-            correctIndices: [0, 2, 3], // Assuming primary colors in paint/art are Red, Yellow, Blue. If light, it would be Red, Green, Blue.
-            timer: 10
-        },
-        {
-            question: "Select the planets in our solar system:",
-            options: ["Mars", "Jupiter", "Andromeda", "Venus"],
-            correctIndices: [0, 1, 3],
-            timer: 12
-        },
-        {
-            question: "Which of the following are fruits?",
-            options: ["Carrot", "Apple", "Banana", "Potato"],
-            correctIndices: [1, 2],
-            timer: 8
-        },
-        {
-            question: "Choose the even numbers from the list:",
-            options: ["1", "2", "3", "4", "5", "6"],
-            correctIndices: [1, 3, 5],
-            timer: 10
+    function startNewQuestion() {
+        if (currentQuestionIndex < allQuizData.length) {
+            const quizDataToSend = allQuizData[currentQuestionIndex];
+            socket.emit('trigger-question', quizDataToSend);
+            document.getElementById('start-btn').disabled = true;
+            currentQuestionIndex++; // Increment so next click pulls next question
+        } else {
+            alert("Quiz Complete! No more questions.");
+            currentQuestionIndex = 0; // Reset for next time if desired
         }
-    ];
-
-    // Check if there are more questions to send
-    if (currentQuestionIndex < allQuizData.length) {
-        const quizDataToSend = allQuizData[currentQuestionIndex];
-        socket.emit('trigger-question', quizDataToSend);
-        document.getElementById('start-btn').disabled = true;
-
-        // Optionally, increment the index for the next question
-        // currentQuestionIndex++;
-        // If you want to automatically move to the next question, you'd
-        // need to call startNewQuestion() again after some event (e.g., answer submitted)
-    } else {
-        console.log("No more questions left!");
-        // You might want to display a "quiz finished" message here
     }
-}
-
-// To start the quiz, you would call startNewQuestion()
-// For example, when a button is clicked:
-// document.getElementById('start-btn').addEventListener('click', startNewQuestion);
-
 
     function adminCloseQuiz() {
         socket.emit('close-quiz-manual');
@@ -273,49 +209,28 @@ function startNewQuestion() {
         document.getElementById('close-btn').style.display = 'none';
         document.getElementById('start-btn').style.display = 'block';
         document.getElementById('start-btn').disabled = false;
+        document.getElementById('start-btn').innerText = "🚀 START NEXT QUESTION";
     }
 
-    // ============================================
-    // FIXED CLOSE FUNCTION - NOW WORKS FOR EVERYONE
-    // ============================================
     function closeQuizOverlay() {
-        // Clear any running timer first
-        if(currentCountdown) {
-            clearInterval(currentCountdown);
-            currentCountdown = null;
-        }
-        
-        // Hide the overlay
+        if(currentCountdown) clearInterval(currentCountdown);
         document.getElementById('quiz-overlay').style.display = 'none';
-        
-        // Reset state
         quizActive = false;
-        hasAnswered = false;
-        
-        // Reset status text color for next time
-        document.getElementById('status-text').style.color = "#f1c40f";
-        document.getElementById('status-text').innerText = "Hurry! Choose correctly!";
-        
-        console.log("Quiz closed by", currentRole);
     }
 
-    // --- SOCKETS ---
     socket.on('show-quiz-overlay', (data) => {
         quizActive = true;
-        
-        // --- NEW MULTI-SELECT STATE ---
         let clicksUsed = 0;
-        const maxClicks = data.correctIndices.length; 
-        const selectedIndices = []; 
-        // ------------------------------
-
+        let pointsThisRound = 0;
+        const maxClicks = data.correctIndices.length;
+        
         const overlay = document.getElementById('quiz-overlay');
         const optionsBox = document.getElementById('quiz-options');
         const timerEl = document.getElementById('global-timer');
         
         overlay.style.display = 'flex';
         document.getElementById('question-text').innerText = data.question;
-        document.getElementById('status-text').innerText = `Select ${maxClicks} answer(s)!`;
+        document.getElementById('status-text').innerText = `Pick ${maxClicks} correct choice(s)!`;
         document.getElementById('status-text').style.color = "#f1c40f";
         optionsBox.innerHTML = "";
         
@@ -329,64 +244,40 @@ function startNewQuestion() {
             btn.id = "opt-" + idx;
             
             btn.onclick = () => {
-                // Prevent clicking if quiz ended, max clicks reached, or button already clicked
-                if(currentRole === "leader" || !quizActive || clicksUsed >= maxClicks || btn.disabled) return;
+                if(!quizActive || clicksUsed >= maxClicks || btn.disabled || currentRole === "leader") return;
                 
                 clicksUsed++;
-                btn.disabled = true; // Disable this specific button so it can't be clicked twice
+                btn.disabled = true;
 
                 if(data.correctIndices.includes(idx)) {
-                    // CORRECT CHOICE
-                    myScore += 10;
-                    document.getElementById('p-score-board').innerText = myScore;
-                    
-                    socket.emit('score-update', { 
-                        username: myUsername,
-                        group: myGroup, 
-                        score: myScore,
-                        pointsAdded: 10 
-                    });
-                    
+                    pointsThisRound += 10;
                     btn.classList.add('correct-reveal');
-                    document.getElementById('status-text').innerText = `Nice! (${clicksUsed}/${maxClicks})`;
-                    document.getElementById('status-text').style.color = "#2ecc71";
                 } else {
-                    // WRONG CHOICE
                     btn.classList.add('wrong-reveal');
-                    document.getElementById('status-text').innerText = `Wrong! (${clicksUsed}/${maxClicks})`;
-                    document.getElementById('status-text').style.color = "#e74c3c";
                 }
 
-                // If user has used all their allowed clicks
+                document.getElementById('status-text').innerText = `Choices: ${clicksUsed}/${maxClicks}`;
+
                 if(clicksUsed === maxClicks) {
+                    quizActive = false; // Stop further clicking
+                    myScore += pointsThisRound;
+                    document.getElementById('p-score-board').innerText = myScore;
+                    socket.emit('score-update', { username: myUsername, group: myGroup, score: myScore, pointsAdded: pointsThisRound });
                     document.querySelectorAll('.quiz-opt').forEach(b => b.disabled = true);
-                    document.getElementById('status-text').innerText = "All choices used! Waiting for timer...";
                 }
             };
             optionsBox.appendChild(btn);
         });
 
-        // Timer Logic (Keep your existing timer logic here)
         currentCountdown = setInterval(() => {
             timeLeft--;
             timerEl.innerText = timeLeft;
             if(timeLeft <= 0) {
                 clearInterval(currentCountdown);
-                currentCountdown = null;
                 quizActive = false;
+                data.correctIndices.forEach(ci => document.getElementById("opt-"+ci)?.classList.add('correct-reveal'));
                 
-                // REVEAL ALL CORRECT ANSWERS
-                data.correctIndices.forEach(correctIdx => {
-                    const correctBtn = document.getElementById("opt-" + correctIdx);
-                    if(correctBtn) correctBtn.classList.add('correct-reveal');
-                });
-                
-                document.getElementById('status-text').innerText = "TIME UP!";
-                
-                if(currentRole === "player") {
-                    setTimeout(() => { closeQuizOverlay(); }, 3000);
-                }
-                
+                if(currentRole === "player") setTimeout(closeQuizOverlay, 3000);
                 if(currentRole === "leader") {
                     document.getElementById('close-btn').style.display = 'block';
                     document.getElementById('start-btn').style.display = 'none';
@@ -395,13 +286,21 @@ function startNewQuestion() {
         }, 1000);
     });
 
-    socket.on('hide-quiz-overlay', () => {
-        closeQuizOverlay(); // Use the close function
+    socket.on('update-leaderboard', (allGroups) => {
+        const list = document.getElementById('rank-list');
+        list.innerHTML = "";
+        Object.entries(allGroups).sort((a,b) => b[1]-a[1]).forEach(([name, score]) => {
+            if(!name) return;
+            const div = document.createElement('div');
+            div.className = "rank-item";
+            div.innerHTML = `<span><b>${name}</b></span> <span class="group-pill">${score} PTS</span>`;
+            list.appendChild(div);
+        });
     });
 
-    // --- UI HELPERS ---
+    socket.on('hide-quiz-overlay', closeQuizOverlay);
     function toggleZoom(e) { if(e.target.tagName !== 'BUTTON') document.getElementById('zoom-container').classList.toggle('zoomed'); }
-    function showData(t, d, type) {
+    function showData(t, d) {
         event.stopPropagation();
         document.getElementById('mTitle').innerText = t;
         document.getElementById('mDesc').innerText = d;
