@@ -21,7 +21,7 @@
             min-height: 100vh; overflow: hidden;
         }
 
-        /* --- LOGIN --- */
+        /* --- LOGIN & WAITING --- */
         #login-screen {
             position: fixed; top:0; left:0; width:100%; height:100%;
             background: var(--bg-color); z-index: 9999;
@@ -36,45 +36,79 @@
             display: none; flex-direction: column; justify-content: center; align-items: center;
         }
 
-        /* --- QUIZ OVERLAY --- */
+        /* --- QUIZ SYSTEM --- */
         #quiz-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.97); z-index: 5000; display: none;
+            background: rgba(0,0,0,0.96); z-index: 5000; display: none;
             flex-direction: column; justify-content: center; align-items: center; color: white;
         }
-        .quiz-timer { font-size: 5rem; font-weight: 900; color: var(--accent); text-shadow: 0 0 20px rgba(231, 76, 60, 0.5); }
-        .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 85%; max-width: 700px; margin-top: 20px; }
-        .quiz-opt { padding: 20px; background: #34495e; color: white; border: none; border-radius: 12px; cursor: pointer; font-size: 1.2rem; transition: 0.3s; }
-        .quiz-opt:disabled { cursor: not-allowed; opacity: 0.8; }
-        .correct-reveal { background: var(--success) !important; box-shadow: 0 0 25px var(--success); transform: scale(1.05); font-weight: bold; }
-        .wrong-reveal { background: var(--accent) !important; opacity: 0.5; }
+        .quiz-close-btn {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 2.5rem;
+            cursor: pointer;
+            z-index: 5001;
+            transition: 0.3s;
+            padding: 10px;
+            line-height: 1;
+        }
+        .quiz-close-btn:hover {
+            color: var(--accent);
+            transform: scale(1.2);
+        }
+        .quiz-timer { font-size: 4rem; font-weight: 900; color: var(--accent); margin-bottom: 10px; }
+        .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 80%; max-width: 600px; margin-top: 20px; }
+        .quiz-opt { padding: 18px; background: #34495e; color: white; border: none; border-radius: 12px; cursor: pointer; font-size: 1.1rem; transition: 0.3s; }
+        .quiz-opt:hover:not(:disabled) { background: #4a6278; transform: translateY(-2px); }
+        .correct-reveal { background: var(--success) !important; box-shadow: 0 0 20px var(--success); transform: scale(1.05); }
+        .wrong-reveal { background: #e74c3c !important; }
 
-        /* --- LEADERBOARD --- */
+        /* --- LEADERBOARD (UPPER LEFT) --- */
         #leaderboard {
             position: absolute; top: 15px; left: 15px; width: 260px;
             background: white; border-radius: 10px; padding: 12px;
             box-shadow: var(--btn-shadow); z-index: 6000; transition: 0.3s;
         }
         #leaderboard.minimized { width: 60px; height: 30px; overflow: hidden; cursor: pointer; background: var(--primary); }
+        #leaderboard.minimized .rank-content, #leaderboard.minimized h3 { display: none; }
         #leaderboard.minimized::after { content: "RANK"; color: white; font-weight: 900; font-size: 12px; display: flex; justify-content: center; align-items: center; height: 100%; }
-        .rank-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 2px solid #eee; }
-        .rank-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f1f1; font-size: 0.9rem; }
-        .group-name { font-weight: bold; color: var(--primary); }
+        
+        .rank-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+        .rank-header h3 { margin: 0; font-size: 0.9rem; color: var(--primary); }
+        .rank-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f9f9f9; font-size: 0.9rem; color: #333; }
+        .group-pill { background: #eee; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; color: #666; font-weight: bold; }
 
-        /* --- MAIN UI --- */
-        .wrapper { position: relative; width: 98vw; max-width: 1000px; aspect-ratio: 3 / 2; background: white; border-radius: 15px; overflow: hidden; display: none; }
-        #zoom-container { position: relative; width: 100%; height: 100%; transition: transform 0.5s ease; }
+        /* --- WRAPPER & UI --- */
+        .wrapper {
+            position: relative; width: 98vw; max-width: 1000px; aspect-ratio: 3 / 2;
+            background: white; border-radius: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            overflow: hidden; display: none;
+        }
+        #zoom-container { position: relative; width: 100%; height: 100%; transition: transform 0.5s ease; cursor: zoom-in; }
         #zoom-container.zoomed { transform: scale(1.7); }
         .base-img { width: 100%; height: 100%; object-fit: contain; }
 
         .admin-controls { position: absolute; top: 15px; right: 15px; z-index: 100; display: flex; gap: 10px; }
-        .trigger-btn { background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .trigger-btn { background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: var(--btn-shadow); }
         .close-quiz-btn { background: #f39c12; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; display: none; }
 
-        .cover-btn { position: absolute; background: #ffffff; border: 2px solid; border-radius: 6px; font-size: 12px; font-weight: 800; cursor: pointer; width: 160px; height: 40px; box-shadow: var(--btn-shadow); }
+        .cover-btn {
+            position: absolute; background: #ffffff; border: 2px solid; border-radius: 6px;
+            font-size: clamp(8px, 1.1vw, 12px); font-weight: 800; cursor: pointer; z-index: 20;
+            box-shadow: var(--btn-shadow); width: 180px; height: 45px;
+        }
 
-        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 400px; background: white; padding: 20px; border-radius: 20px; visibility: hidden; z-index: 3000; }
-        .modal.active { visibility: visible; }
+        .modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8);
+            width: 85%; max-width: 400px; background: white; padding: 20px;
+            border-radius: 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+            visibility: hidden; opacity: 0; transition: 0.3s; z-index: 3000;
+        }
+        .modal.active { visibility: visible; opacity: 1; transform: translate(-50%, -50%) scale(1); }
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; z-index: 2000; }
     </style>
 </head>
@@ -83,25 +117,27 @@
 <div id="login-screen">
     <div class="login-box">
         <h2>AIGHAM Portal</h2>
-        <input type="text" id="user-name" placeholder="Your Name">
-        <input type="text" id="group-id" placeholder="Group ID (e.g. Group 6)">
+        <input type="text" id="user-name" placeholder="Full Name">
+        <input type="text" id="group-id" placeholder="Group Name (e.g. Group 6)">
         <input type="password" id="pass-id" placeholder="Password">
-        <button class="trigger-btn" style="width:100%" onclick="login()">Enter Laboratory</button>
+        <button class="trigger-btn" style="width:100%" onclick="login()">Connect</button>
     </div>
 </div>
 
 <div id="waiting-screen">
-    <h1>Student Terminal</h1>
+    <div class="quiz-timer" id="wait-timer" style="display:none;">10</div>
+    <h1>Student Dashboard</h1>
     <div id="p-score-board" style="font-size: 4rem; color: var(--success); font-weight: bold;">0</div>
-    <p id="group-display" style="font-size: 1.2rem;"></p>
-    <p>Waiting for Teacher to broadcast a question...</p>
+    <p id="group-display" style="font-weight:bold; color:#ecf0f1;"></p>
+    <p>Prepare for the quiz. Watching Leaderboard...</p>
 </div>
 
 <div id="quiz-overlay">
+    <button class="quiz-close-btn" onclick="closeQuizOverlay()" title="Close Quiz">×</button>
     <div class="quiz-timer" id="global-timer">10</div>
-    <h2 id="question-text" style="text-align:center; padding: 0 20px;">Question</h2>
+    <h2 id="question-text" style="text-align:center;">Question</h2>
     <div class="quiz-options" id="quiz-options"></div>
-    <p id="status-text" style="margin-top:20px; color:#f1c40f; font-weight: bold;">CHOOSE ONE ANSWER!</p>
+    <p id="status-text" style="margin-top:20px; color:#f1c40f;">Hurry! Choose correctly!</p>
 </div>
 
 <div class="overlay" id="overlay" onclick="closeModal()"></div>
@@ -109,61 +145,60 @@
 <div class="wrapper" id="main-wrapper">
     <div id="leaderboard" onclick="if(this.classList.contains('minimized')) toggleRank()">
         <div class="rank-header">
-            <h3>Group Rankings</h3>
-            <button onclick="event.stopPropagation(); toggleRank()" style="background:none; border:none; cursor:pointer;">–</button>
+            <h3>Rankings</h3>
+            <button onclick="event.stopPropagation(); toggleRank()" style="cursor:pointer; background:none; border:none; font-weight:bold;">–</button>
         </div>
-        <div id="rank-list"></div>
+        <div id="rank-list" class="rank-content"></div>
     </div>
 
     <div class="admin-controls" id="admin-ui" style="display:none;">
-        <button id="start-btn" class="trigger-btn" onclick="startNewQuestion()">🚀 PUSH QUESTION</button>
+        <button id="start-btn" class="trigger-btn" onclick="startNewQuestion()">🚀 START QUIZ</button>
         <button id="close-btn" class="close-quiz-btn" onclick="adminCloseQuiz()">🛑 CLOSE MODAL</button>
     </div>
 
     <div id="zoom-container" onclick="toggleZoom(event)">
         <img src="https://imgur.com/5YQmThC.png" class="base-img">
-        <button class="cover-btn" style="top: 18%; left: 8%; border-color: #ff4757;" onclick="showData('Nasal Cavity', 'Filters and warms air.', 'video')">Nasal Cavity</button>
-        <button class="cover-btn" style="top: 61%; left: 9%; border-color: #48dbfb;" onclick="showData('Trachea', 'The main windpipe.', 'video')">Trachea</button>
+        <button class="cover-btn" style="top: 18%; left: 8%; border-color: #ff4757;" onclick="showData('Nasal Cavity', 'Filters, warms, and moistens air.', 'video')">Nasal Cavity</button>
+        <button class="cover-btn" style="top: 61%; left: 9%; border-color: #48dbfb;" onclick="showData('Trachea', 'The tube connecting throat to lungs.', 'video')">Trachea</button>
     </div>
 </div>
 
 <div class="modal" id="modal">
-    <span style="float:right; cursor:pointer; color:red; font-weight:bold;" onclick="closeModal()">×</span>
+    <span style="float:right; cursor:pointer; color:red; font-size: 1.5rem;" onclick="closeModal()">×</span>
     <h2 id="mTitle"></h2>
     <p id="mDesc"></p>
-    <div id="mediaBox" style="width:100%; height:200px; background:#000; border-radius:10px;"></div>
+    <div id="mediaBox" style="width:100%; height:200px; background:#000; border-radius: 8px;"></div>
 </div>
 
 <script>
     const socket = io();
-    let currentRole = "player", myUsername = "", myGroup = "", myScore = 0;
-    let quizActive = false, canClick = false;
-
-    // --- QUESTION BANK ---
-    const questions = [
-        { q: "Which part warms and filters the air?", opts: ["Nasal Cavity", "Trachea", "Alveoli", "Esophagus"], ans: [0] },
-        { q: "What is known as the 'windpipe'?", opts: ["Larynx", "Trachea", "Bronchi", "Pharynx"], ans: [1] },
-        { q: "Where does gas exchange occur?", opts: ["Trachea", "Bronchi", "Alveoli", "Nose"], ans: [2] }
-    ];
-    let qIdx = 0;
+    let currentRole = "player";
+    let myUsername = "";
+    let myGroup = "";
+    let myScore = 0;
+    let quizActive = false;
+    let currentCountdown = null;
+    let hasAnswered = false;
 
     function login() {
         const name = document.getElementById('user-name').value;
         const group = document.getElementById('group-id').value;
         const pass = document.getElementById('pass-id').value;
-        if(!name || !pass) return alert("Missing details");
+        
+        if(!name || !pass) return alert("Please fill Name and Password");
 
-        if(group === "") {
-            if(pass !== "renz123") return alert("Admin Denied");
+        if(group.trim() === "") {
+            if(pass !== "renz123") return alert("Admin Password Incorrect");
             currentRole = "leader";
             document.getElementById('admin-ui').style.display = 'flex';
             document.getElementById('main-wrapper').style.display = 'block';
         } else {
             currentRole = "player";
             myGroup = group;
-            document.getElementById('group-display').innerText = "Assigned to: " + group;
+            document.getElementById('group-display').innerText = "GROUP: " + group;
             document.getElementById('waiting-screen').style.display = 'flex';
         }
+        
         myUsername = name;
         document.getElementById('login-screen').style.display = 'none';
         socket.emit('user-join', { username: name, group: group, role: currentRole });
@@ -171,78 +206,151 @@
 
     function toggleRank() { document.getElementById('leaderboard').classList.toggle('minimized'); }
 
+    // --- ADMIN LOGIC ---
     function startNewQuestion() {
-        const data = questions[qIdx % questions.length];
-        socket.emit('trigger-question', {
-            question: data.q,
-            options: data.opts,
-            correctIndices: data.ans,
+        const quizData = {
+            question: "Select the major parts of the Respiratory System:",
+            options: ["Nasal Cavity", "Lungs", "Small Intestine", "Heart"],
+            correctIndices: [0, 1],
             timer: 10
-        });
-        qIdx++;
+        };
+        socket.emit('trigger-question', quizData);
         document.getElementById('start-btn').disabled = true;
     }
 
     function adminCloseQuiz() {
         socket.emit('close-quiz-manual');
-        document.getElementById('close-btn').style.display = 'none';
-        document.getElementById('start-btn').disabled = false;
-        document.getElementById('start-btn').style.display = 'block';
+        resetQuizUI();
     }
 
-    socket.on('update-leaderboard', (groups) => {
+    function resetQuizUI() {
+        document.getElementById('close-btn').style.display = 'none';
+        document.getElementById('start-btn').style.display = 'block';
+        document.getElementById('start-btn').disabled = false;
+    }
+
+    // ============================================
+    // FIXED CLOSE FUNCTION - NOW WORKS FOR EVERYONE
+    // ============================================
+    function closeQuizOverlay() {
+        // Clear any running timer first
+        if(currentCountdown) {
+            clearInterval(currentCountdown);
+            currentCountdown = null;
+        }
+        
+        // Hide the overlay
+        document.getElementById('quiz-overlay').style.display = 'none';
+        
+        // Reset state
+        quizActive = false;
+        hasAnswered = false;
+        
+        // Reset status text color for next time
+        document.getElementById('status-text').style.color = "#f1c40f";
+        document.getElementById('status-text').innerText = "Hurry! Choose correctly!";
+        
+        console.log("Quiz closed by", currentRole);
+    }
+
+    // --- SOCKETS ---
+    socket.on('update-leaderboard', (allGroups) => {
         const list = document.getElementById('rank-list');
         list.innerHTML = "";
-        Object.entries(groups).sort((a,b) => b[1]-a[1]).forEach(([name, score]) => {
-            if(!name || name === "null") return;
-            list.innerHTML += `<div class="rank-item"><span class="group-name">${name}</span> <b>${score}</b></div>`;
+        
+        // Convert group object to sorted array
+        const sortedGroups = Object.entries(allGroups).sort((a, b) => b[1] - a[1]);
+        
+        sortedGroups.forEach(([groupName, score]) => {
+            if(groupName === "undefined" || groupName === "") return;
+            const div = document.createElement('div');
+            div.className = "rank-item";
+            div.innerHTML = `<span><b>${groupName}</b></span> <span class="group-pill">${score} PTS</span>`;
+            list.appendChild(div);
         });
     });
 
     socket.on('show-quiz-overlay', (data) => {
-        quizActive = true; canClick = true;
+        quizActive = true;
+        hasAnswered = false;
         const overlay = document.getElementById('quiz-overlay');
-        const box = document.getElementById('quiz-options');
+        const optionsBox = document.getElementById('quiz-options');
+        const timerEl = document.getElementById('global-timer');
+        
         overlay.style.display = 'flex';
         document.getElementById('question-text').innerText = data.question;
-        document.getElementById('status-text').innerText = "CHOOSE ONE ANSWER!";
-        box.innerHTML = "";
+        document.getElementById('status-text').innerText = "Hurry! Choose correctly!";
+        document.getElementById('status-text').style.color = "#f1c40f";
+        optionsBox.innerHTML = "";
         
-        let time = data.timer;
-        document.getElementById('global-timer').innerText = time;
+        let timeLeft = data.timer;
+        timerEl.innerText = timeLeft;
 
-        data.options.forEach((opt, i) => {
+        // Create buttons
+        data.options.forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = "quiz-opt";
-            btn.id = "opt-" + i;
             btn.innerText = opt;
+            btn.id = "opt-" + idx;
             btn.onclick = () => {
-                if(!canClick || currentRole === "leader") return;
-                canClick = false; // MAXIMUM ONE CLICK PER PLAYER
-                if(data.correctIndices.includes(i)) {
+                if(currentRole === "leader" || !quizActive || hasAnswered) return;
+                
+                hasAnswered = true;
+                
+                if(data.correctIndices.includes(idx)) {
+                    // CORRECT ANSWER - Update score immediately
                     myScore += 10;
                     document.getElementById('p-score-board').innerText = myScore;
-                    socket.emit('score-update', { group: myGroup, score: 10 });
-                    btn.style.background = "#2ecc71";
-                    document.getElementById('status-text').innerText = "CORRECT!";
+                    
+                    // EMIT SCORE TO SERVER
+                    socket.emit('score-update', { 
+                        username: myUsername,
+                        group: myGroup, 
+                        score: myScore,
+                        pointsAdded: 10 
+                    });
+                    
+                    btn.classList.add('correct-reveal');
+                    document.getElementById('status-text').innerText = "Correct! +10 points!";
+                    document.getElementById('status-text').style.color = "#2ecc71";
                 } else {
-                    btn.style.background = "#e74c3c";
-                    document.getElementById('status-text').innerText = "WRONG!";
+                    btn.classList.add('wrong-reveal');
+                    document.getElementById('status-text').innerText = "Wrong answer!";
+                    document.getElementById('status-text').style.color = "#e74c3c";
                 }
+                
+                // Disable all after one click
                 document.querySelectorAll('.quiz-opt').forEach(b => b.disabled = true);
             };
-            box.appendChild(btn);
+            optionsBox.appendChild(btn);
         });
 
-        const timer = setInterval(() => {
-            time--;
-            document.getElementById('global-timer').innerText = time;
-            if(time <= 0) {
-                clearInterval(timer);
-                canClick = false;
+        // Timer Logic
+        currentCountdown = setInterval(() => {
+            timeLeft--;
+            timerEl.innerText = timeLeft;
+            if(timeLeft <= 0) {
+                clearInterval(currentCountdown);
+                currentCountdown = null;
                 quizActive = false;
-                data.correctIndices.forEach(idx => document.getElementById("opt-"+idx).classList.add('correct-reveal'));
-                document.getElementById('status-text').innerText = "TIME UP! REVIEWING...";
+                
+                // REVEAL ANSWERS
+                data.correctIndices.forEach(correctIdx => {
+                    const correctBtn = document.getElementById("opt-" + correctIdx);
+                    if(correctBtn) correctBtn.classList.add('correct-reveal');
+                });
+                
+                document.getElementById('status-text').innerText = "TIME UP! Closing in 3 seconds...";
+                document.getElementById('status-text').style.color = "#f39c12";
+                
+                // AUTO-CLOSE FOR PLAYERS after 3 seconds
+                if(currentRole === "player") {
+                    setTimeout(() => {
+                        closeQuizOverlay(); // Use the close function
+                    }, 3000);
+                }
+                
+                // Show admin close button
                 if(currentRole === "leader") {
                     document.getElementById('close-btn').style.display = 'block';
                     document.getElementById('start-btn').style.display = 'none';
@@ -251,17 +359,23 @@
         }, 1000);
     });
 
-    socket.on('hide-quiz-overlay', () => { document.getElementById('quiz-overlay').style.display = 'none'; });
+    socket.on('hide-quiz-overlay', () => {
+        closeQuizOverlay(); // Use the close function
+    });
 
+    // --- UI HELPERS ---
     function toggleZoom(e) { if(e.target.tagName !== 'BUTTON') document.getElementById('zoom-container').classList.toggle('zoomed'); }
-    function showData(t, d) {
+    function showData(t, d, type) {
         event.stopPropagation();
         document.getElementById('mTitle').innerText = t;
         document.getElementById('mDesc').innerText = d;
         document.getElementById('modal').classList.add('active');
         document.getElementById('overlay').style.display = 'block';
     }
-    function closeModal() { document.getElementById('modal').classList.remove('active'); document.getElementById('overlay').style.display = 'none'; }
+    function closeModal() {
+        document.getElementById('modal').classList.remove('active');
+        document.getElementById('overlay').style.display = 'none';
+    }
 </script>
 </body>
 </html>
