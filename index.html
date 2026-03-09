@@ -234,6 +234,8 @@
         const pass = document.getElementById('pass-id').value;
         if(!name || !pass) return alert("Fill Name and Password");
 
+        document.getElementById('main-wrapper').style.display = 'block';
+
         if(group.trim() === "") {
             if(pass !== "renz123") return alert("Admin Password Incorrect");
             currentRole = "leader";
