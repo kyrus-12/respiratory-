@@ -1,89 +1,104 @@
 const express = require('express');
 const http = require('http');
-const { Server } = require('socket.io');
+const socketIo = require('socket.io');
+
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = socketIo(server);
 
-app.use(express.static(__dirname));
-
-// ============================================
-// MISSING: GROUP SCORES STORAGE - ADD THIS
-// ============================================
-let groupScores = {}; // Stores: { "Group 1": 50, "Group 2": 30 }
-
-let gameData = {
-    activeQuestion: null,
-    firstAnswerer: null
-};
+// Track group states
+const groups = {}; // { groupName: { members: [], selections: [], score: 0 } }
+const groupSelections = {}; // { groupName: { questionIndex: [selectedIndices] } }
 
 io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
-
-    // ============================================
-    // MISSING: USER JOIN HANDLER - ADD THIS
-    // ============================================
+    console.log('New client connected');
+    
     socket.on('user-join', (data) => {
         socket.username = data.username;
         socket.group = data.group;
         socket.role = data.role;
         
-        // Initialize group if doesn't exist
-        if (data.group && !groupScores[data.group]) {
-            groupScores[data.group] = 0;
+        if(data.role === 'player' && data.group) {
+            // Join socket room for this group
+            socket.join(data.group);
+            
+            // Initialize group if needed
+            if(!groups[data.group]) {
+                groups[data.group] = { members: [], score: 0 };
+            }
+            groups[data.group].members.push(data.username);
+            
+            // Notify all group members of count
+            io.to(data.group).emit('group-members-update', 
+                groups[data.group].members.length);
         }
+    });
+    
+    socket.on('trigger-question', (quizData) => {
+        // Reset group selections for new question
+        Object.keys(groups).forEach(group => {
+            groupSelections[group] = [];
+        });
         
-        // Send current leaderboard to new user
-        socket.emit('update-leaderboard', groupScores);
-        console.log(`${data.username} joined as ${data.role} in ${data.group || 'Admin'}`);
+        // Broadcast to all clients
+        io.emit('show-quiz-overlay', quizData);
     });
-
-    // Leader triggers a question from the main view
-    socket.on('trigger-question', (data) => {
-        gameData.activeQuestion = data;
-        gameData.firstAnswerer = null;
-        io.emit('show-quiz-overlay', data); 
+    
+    socket.on('group-selection-attempt', (data) => {
+        const { group, optionIndex, maxClicks, questionIndex } = data;
+        
+        // Initialize if needed
+        if(!groupSelections[group]) groupSelections[group] = [];
+        
+        // Check if already selected
+        if(groupSelections[group].includes(optionIndex)) return;
+        
+        // Check if max clicks reached
+        if(groupSelections[group].length >= maxClicks) return;
+        
+        // Add selection
+        groupSelections[group].push(optionIndex);
+        
+        // Broadcast to entire group (including sender)
+        io.to(group).emit('group-selection-update', {
+            optionIndex: optionIndex,
+            selectionsSoFar: groupSelections[group],
+            maxClicks: maxClicks,
+            selector: socket.username
+        });
     });
-
-    // ============================================
-    // MISSING: SCORE UPDATE HANDLER - ADD THIS
-    // ============================================
+    
     socket.on('score-update', (data) => {
-        const { group, score, pointsAdded } = data;
+        if(groups[data.group]) {
+            groups[data.group].score = data.score;
+        }
         
-        if (group && groupScores.hasOwnProperty(group)) {
-            // Update the group's score
-            groupScores[group] = score;
-            
-            // Broadcast updated leaderboard to ALL clients
-            io.emit('update-leaderboard', groupScores);
-            
-            console.log(`Score updated: ${group} = ${score} (+${pointsAdded})`);
-        }
+        // Broadcast updated leaderboard to all
+        const leaderboard = {};
+        Object.keys(groups).forEach(g => {
+            leaderboard[g] = groups[g].score;
+        });
+        io.emit('update-leaderboard', leaderboard);
     });
-
-    // Player clicks an answer (legacy handler - keep for compatibility)
-    socket.on('submit-answer', (payload) => {
-        if (!gameData.firstAnswerer) {
-            gameData.firstAnswerer = payload.username;
-            io.emit('reveal-results', {
-                winner: payload.username,
-                correctIndex: gameData.activeQuestion.correctIndex
-            });
-        }
-    });
-
-    // ============================================
-    // MISSING: CLOSE QUIZ HANDLER - ADD THIS
-    // ============================================
+    
     socket.on('close-quiz-manual', () => {
         io.emit('hide-quiz-overlay');
-        console.log('Quiz closed by admin');
     });
-
+    
+    socket.on('user-leave', (data) => {
+        if(data.group && groups[data.group]) {
+            groups[data.group].members = groups[data.group].members
+                .filter(m => m !== data.username);
+            io.to(data.group).emit('group-members-update', 
+                groups[data.group].members.length);
+        }
+    });
+    
     socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.username || socket.id);
+        console.log('Client disconnected');
     });
 });
 
-server.listen(3000, () => console.log('Server running on port 3000'));
+server.listen(3000, () => {
+    console.log('Server running on port 3000');
+});
