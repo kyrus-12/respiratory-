@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Respiratory System Interactive Mastery</title>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
     <style>
         :root {
             --bg-color: #f0f2f5;
@@ -86,9 +87,14 @@
         }
         .modal.active { visibility: visible; opacity: 1; transform: translate(-50%, -50%) scale(1); }
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; z-index: 2000; }
+        
+        /* Hidden YT Player */
+        #yt-player { position: absolute; width: 0; height: 0; opacity: 0; pointer-events: none; }
     </style>
 </head>
 <body>
+
+<div id="yt-player"></div>
 
 <div id="login-screen">
     <div class="login-box">
@@ -155,6 +161,36 @@
     let currentCountdown = null;
     let currentQuestionIndex = 0;
 
+    // --- MUSIC SETTINGS ---
+    let player;
+    // Add your YouTube Video IDs here
+    const playlist = ["https://youtu.be/UaRrDZWhtWA?si=K-ybalivlWu1jUvx", "https://youtu.be/UaRrDZWhtWA?si=K-ybalivlWu1jUvx", "https://youtu.be/UaRrDZWhtWA?si=K-ybalivlWu1jUvx"]; 
+    
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('yt-player', {
+            height: '0', width: '0',
+            videoId: playlist[0],
+            playerVars: { 'autoplay': 0, 'controls': 0 }
+        });
+    }
+
+    function playRandomMusic() {
+        if(player && player.loadVideoById) {
+            const randomID = playlist[Math.floor(Math.random() * playlist.length)];
+            player.loadVideoById(randomID);
+            player.playVideo();
+        }
+    }
+
+    function stopMusic() {
+        if(player && player.stopVideo) player.stopVideo();
+    }
+
+    // --- DATA RESET ON EXIT ---
+    window.addEventListener('beforeunload', () => {
+        socket.emit('user-leave', { username: myUsername, group: myGroup });
+    });
+
     const allQuizData = [
         { question: "Which of these are types of energy?", options: ["Kinetic", "Potential", "Chemical", "Electrical"], correctIndices: [0, 1, 2, 3], timer: 15 },
         { question: "Identify the primary colors (in Art):", options: ["Red", "Green", "Blue", "Yellow"], correctIndices: [0, 2, 3], timer: 10 },
@@ -211,16 +247,19 @@
         document.getElementById('start-btn').style.display = 'block';
         document.getElementById('start-btn').disabled = false;
         document.getElementById('start-btn').innerText = "🚀 START NEXT QUESTION";
+        stopMusic();
     }
 
     function closeQuizOverlay() {
         if(currentCountdown) clearInterval(currentCountdown);
         document.getElementById('quiz-overlay').style.display = 'none';
         quizActive = false;
+        stopMusic();
     }
 
     socket.on('show-quiz-overlay', (data) => {
         quizActive = true;
+        playRandomMusic(); // Trigger music
         let clicksUsed = 0;
         let pointsThisRound = 0;
         let scoreSubmitted = false;
@@ -247,7 +286,6 @@
             
             btn.onclick = () => {
                 if(!quizActive || clicksUsed >= maxClicks || btn.disabled || currentRole === "leader") return;
-                
                 clicksUsed++;
                 btn.disabled = true;
 
@@ -259,7 +297,6 @@
                 }
 
                 document.getElementById('status-text').innerText = `Choices: ${clicksUsed}/${maxClicks}`;
-
                 if(clicksUsed === maxClicks) {
                     quizActive = false;
                     submitPoints();
@@ -273,12 +310,7 @@
             scoreSubmitted = true;
             myScore += pointsThisRound;
             document.getElementById('p-score-board').innerText = myScore;
-            socket.emit('score-update', { 
-                username: myUsername, 
-                group: myGroup, 
-                score: myScore, 
-                pointsAdded: pointsThisRound 
-            });
+            socket.emit('score-update', { username: myUsername, group: myGroup, score: myScore, pointsAdded: pointsThisRound });
             document.querySelectorAll('.quiz-opt').forEach(b => b.disabled = true);
         }
 
@@ -288,22 +320,17 @@
             if(timeLeft <= 0) {
                 clearInterval(currentCountdown);
                 quizActive = false;
+                stopMusic(); // Stop music when time is up
                 
-                // Reveal all correct answers
                 data.correctIndices.forEach(ci => {
                     const el = document.getElementById("opt-"+ci);
                     if(el) el.classList.add('correct-reveal');
                 });
                 
                 document.getElementById('status-text').innerText = "TIME UP!";
-                
-                // Submit whatever points were earned before time ran out
                 if(!scoreSubmitted) submitPoints();
 
-                if(currentRole === "player") {
-                    setTimeout(closeQuizOverlay, 3000);
-                }
-                
+                if(currentRole === "player") setTimeout(closeQuizOverlay, 3000);
                 if(currentRole === "leader") {
                     document.getElementById('close-btn').style.display = 'block';
                     document.getElementById('start-btn').style.display = 'none';
@@ -315,15 +342,13 @@
     socket.on('update-leaderboard', (allGroups) => {
         const list = document.getElementById('rank-list');
         list.innerHTML = "";
-        Object.entries(allGroups)
-            .sort((a,b) => b[1]-a[1])
-            .forEach(([name, score]) => {
-                if(!name || name === "undefined") return;
-                const div = document.createElement('div');
-                div.className = "rank-item";
-                div.innerHTML = `<span><b>${name}</b></span> <span class="group-pill">${score} PTS</span>`;
-                list.appendChild(div);
-            });
+        Object.entries(allGroups).sort((a,b) => b[1]-a[1]).forEach(([name, score]) => {
+            if(!name || name === "undefined") return;
+            const div = document.createElement('div');
+            div.className = "rank-item";
+            div.innerHTML = `<span><b>${name}</b></span> <span class="group-pill">${score} PTS</span>`;
+            list.appendChild(div);
+        });
     });
 
     socket.on('hide-quiz-overlay', () => {
@@ -331,11 +356,7 @@
         if(currentRole === "leader") resetQuizUI();
     });
 
-    function toggleZoom(e) { 
-        if(e.target.tagName !== 'BUTTON') 
-            document.getElementById('zoom-container').classList.toggle('zoomed'); 
-    }
-
+    function toggleZoom(e) { if(e.target.tagName !== 'BUTTON') document.getElementById('zoom-container').classList.toggle('zoomed'); }
     function showData(t, d) {
         event.stopPropagation();
         document.getElementById('mTitle').innerText = t;
@@ -343,7 +364,6 @@
         document.getElementById('modal').classList.add('active');
         document.getElementById('overlay').style.display = 'block';
     }
-
     function closeModal() {
         document.getElementById('modal').classList.remove('active');
         document.getElementById('overlay').style.display = 'none';
