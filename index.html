@@ -39,16 +39,16 @@
         /* --- QUIZ SYSTEM --- */
         #quiz-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.92); z-index: 5000; display: none;
+            background: rgba(0,0,0,0.95); z-index: 5000; display: none;
             flex-direction: column; justify-content: center; align-items: center; color: white;
         }
         .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 80%; max-width: 600px; margin-top: 20px; }
         .quiz-opt { padding: 18px; background: #34495e; color: white; border: none; border-radius: 12px; cursor: pointer; font-size: 1.1rem; }
         .selected-correct { background: var(--success) !important; transform: scale(1.05); }
 
-        /* --- MINIMIZABLE RANKING (UPPER LEFT) --- */
+        /* --- LEADERBOARD (UPPER LEFT) --- */
         #leaderboard {
-            position: absolute; top: 15px; left: 15px; width: 220px;
+            position: absolute; top: 15px; left: 15px; width: 240px;
             background: white; border-radius: 10px; padding: 12px;
             box-shadow: var(--btn-shadow); z-index: 6000; transition: 0.3s;
         }
@@ -58,10 +58,10 @@
         
         .rank-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .rank-header h3 { margin: 0; font-size: 0.9rem; color: var(--primary); }
-        .toggle-rank { cursor: pointer; background: var(--accent); color: white; border: none; border-radius: 4px; padding: 2px 8px; font-weight: bold; }
         .rank-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.85rem; color: #333; }
+        .group-tag { font-size: 0.7rem; color: #7f8c8d; display: block; }
 
-        /* --- WRAPPER & DIAGRAM --- */
+        /* --- WRAPPER & UI --- */
         .wrapper {
             position: relative; width: 98vw; max-width: 1000px; aspect-ratio: 3 / 2;
             background: white; border-radius: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
@@ -72,33 +72,14 @@
         #zoom-container.zoomed { transform: scale(1.7); }
         .base-img { width: 100%; height: 100%; object-fit: contain; }
 
+        .admin-controls { position: absolute; top: 15px; right: 15px; z-index: 100; display: flex; gap: 10px; }
+        .trigger-btn { background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .close-quiz-btn { background: #f39c12; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; display: none; }
+
         .cover-btn {
             position: absolute; background: #ffffff; border: 2px solid; border-radius: 6px;
             font-size: clamp(8px, 1.1vw, 12px); font-weight: 800; cursor: pointer; z-index: 20;
-            display: flex; align-items: center; justify-content: center; text-align: center;
-            box-shadow: var(--btn-shadow); transition: 0.2s; width: 180px; height: 45px;
-        }
-
-        .title-btn {
-            position: absolute; top: 4%; left: 50%; transform: translateX(-50%);
-            width: 450px; height: 60px; background: #2c3e50; color: white;
-            border: 3px solid #34495e; border-radius: 12px; font-size: 20px;
-            font-weight: 900; cursor: pointer; z-index: 30; box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-        }
-
-        .admin-controls { position: absolute; top: 15px; right: 15px; z-index: 100; }
-        .trigger-btn { background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-
-        .tap-node {
-            position: absolute; width: 10px; height: 10px; border-radius: 50%;
-            border: 2px solid white; cursor: pointer; z-index: 25;
-            animation: pulse 2s infinite; transform: translate(-50%, -50%);
-        }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(0,0,0,0.4); }
-            70% { box-shadow: 0 0 0 12px rgba(0,0,0,0); }
-            100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); }
+            box-shadow: var(--btn-shadow); width: 180px; height: 45px;
         }
 
         .modal {
@@ -108,9 +89,7 @@
             visibility: hidden; opacity: 0; transition: 0.3s; z-index: 3000;
         }
         .modal.active { visibility: visible; opacity: 1; transform: translate(-50%, -50%) scale(1); }
-        .media-box { width: 100%; height: 200px; background: #000; border-radius: 12px; margin-top: 15px; overflow: hidden; }
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; z-index: 2000; }
-        .close-btn { float: right; font-size: 25px; cursor: pointer; color: #ff4757; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -119,23 +98,24 @@
     <div class="login-box">
         <h2>AIGHAM Portal</h2>
         <input type="text" id="user-name" placeholder="Name">
-        <input type="text" id="group-id" placeholder="Group (Leave empty for Leader)">
+        <input type="text" id="group-id" placeholder="Group (e.g., Group 6)">
         <input type="password" id="pass-id" placeholder="Password">
-        <button class="trigger-btn" style="width:100%" onclick="login()">Connect</button>
+        <button class="trigger-btn" style="width:100%" onclick="login()">Enter System</button>
     </div>
 </div>
 
 <div id="waiting-screen">
     <h1>Student Dashboard</h1>
     <div id="p-score-board" style="font-size: 3rem; color: var(--success); font-weight: bold;">0</div>
-    <p>Waiting for instructions from the Leader...</p>
+    <p id="group-display"></p>
+    <p>Waiting for the quiz to be triggered...</p>
 </div>
 
 <div id="quiz-overlay">
-    <h1 id="timer-display" style="font-size: 4rem; margin:0;">10</h1>
-    <h2 id="question-text" style="text-align:center; padding: 0 20px;">Quiz</h2>
+    <h1 style="font-size: 2rem;">QUIZ IN PROGRESS</h1>
+    <h2 id="question-text">Question</h2>
     <div class="quiz-options" id="quiz-options"></div>
-    <p style="margin-top:15px; color:#aaa;">Select all correct answers. Remaining: <span id="clicks-left">0</span></p>
+    <p id="quiz-status-msg" style="margin-top:20px; color:#f1c40f;">Select correct answers. Waiting for Admin to close...</p>
 </div>
 
 <div class="overlay" id="overlay" onclick="closeModal()"></div>
@@ -144,97 +124,93 @@
     <div id="leaderboard" onclick="if(this.classList.contains('minimized')) toggleRank()">
         <div class="rank-header">
             <h3>Leaderboard</h3>
-            <button class="toggle-rank" onclick="event.stopPropagation(); toggleRank()">–</button>
+            <button onclick="event.stopPropagation(); toggleRank()" style="cursor:pointer; background:none; border:none; font-weight:bold;">–</button>
         </div>
-        <div id="rank-list" class="rank-content">
-            <p style="font-size: 0.7rem; color: #999;">No players active...</p>
-        </div>
+        <div id="rank-list" class="rank-content"></div>
     </div>
 
     <div class="admin-controls" id="admin-ui" style="display:none;">
-        <button class="trigger-btn" onclick="startNewQuestion()">🚀 START QUIZ</button>
+        <button id="start-btn" class="trigger-btn" onclick="startNewQuestion()">🚀 START QUIZ</button>
+        <button id="close-btn" class="close-quiz-btn" onclick="adminCloseQuiz()">🛑 CLOSE & REVIEW</button>
     </div>
 
     <div id="zoom-container" onclick="toggleZoom(event)">
         <img src="https://imgur.com/5YQmThC.png" class="base-img">
-        <button class="title-btn" onclick="showData('Respiratory System', 'The network of organs that help you breathe.', 'video')">RESPIRATORY SYSTEM</button>
-        
-        <button class="cover-btn" style="top: 18%; left: 8%; border-color: #ff4757;" onclick="showData('Nasal Cavity', 'Warms and filters air.', 'video')">Nasal Cavity</button>
-        <button class="cover-btn" style="top: 61%; left: 9%; border-color: #48dbfb;" onclick="showData('Trachea', 'The main windpipe.', 'video')">Trachea</button>
-        <button class="cover-btn" style="top: 89%; right: 10%; border-color: #222f3e;" onclick="showData('Diaphragm', 'Muscle for breathing.', 'video')">Diaphragm</button>
-        
-        <div class="tap-node" style="top: 37%; left: 42%; background: #ff4757;" onclick="showData('Nasal Point', 'Filter check.', 'image')"></div>
-        <div class="tap-node" style="top: 57%; left: 48%; background: #48dbfb;" onclick="showData('Trachea Tip', 'Tube entry.', 'video')"></div>
+        <button class="cover-btn" style="top: 18%; left: 8%; border-color: #ff4757;" onclick="showData('Nasal Cavity', 'Filters and warms air.', 'video')">Nasal Cavity</button>
+        <button class="cover-btn" style="top: 61%; left: 9%; border-color: #48dbfb;" onclick="showData('Trachea', 'The windpipe.', 'video')">Trachea</button>
     </div>
 </div>
 
 <div class="modal" id="modal">
-    <span class="close-btn" onclick="closeModal()">×</span>
-    <h2 id="mTitle">Title</h2>
-    <p id="mDesc">Description</p>
-    <div class="media-box" id="mediaBox"></div>
+    <span style="float:right; cursor:pointer; color:red; font-weight:bold;" onclick="closeModal()">×</span>
+    <h2 id="mTitle"></h2>
+    <p id="mDesc"></p>
+    <div id="mediaBox" style="width:100%; height:200px; background:#000;"></div>
 </div>
 
 <script>
     const socket = io();
     let currentRole = "player";
     let myUsername = "";
+    let myGroup = "";
     let myScore = 0;
-    let clicksRemaining = 0;
     let playersData = {};
 
     function login() {
         const name = document.getElementById('user-name').value;
         const group = document.getElementById('group-id').value;
         const pass = document.getElementById('pass-id').value;
-        const MASTER_PASS = "renz123"; 
-
-        if(!name || !pass) return alert("All fields required");
+        
+        if(!name || !pass) return alert("Fill all fields");
 
         if(group === "") {
-            if(pass !== MASTER_PASS) return alert("Invalid Admin Access");
+            if(pass !== "renz123") return alert("Wrong Admin Pass");
             currentRole = "leader";
-            document.getElementById('admin-ui').style.display = 'block';
+            document.getElementById('admin-ui').style.display = 'flex';
             document.getElementById('main-wrapper').style.display = 'block';
         } else {
             currentRole = "player";
+            myGroup = group;
+            document.getElementById('group-display').innerText = "Joined as: " + group;
             document.getElementById('waiting-screen').style.display = 'flex';
         }
+        
         myUsername = name;
         document.getElementById('login-screen').style.display = 'none';
-        socket.emit('user-join', { username: name, role: currentRole });
+        socket.emit('user-join', { username: name, group: group, role: currentRole });
     }
 
-    function toggleRank() {
-        document.getElementById('leaderboard').classList.toggle('minimized');
-    }
+    function toggleRank() { document.getElementById('leaderboard').classList.toggle('minimized'); }
 
+    // --- ADMIN ACTIONS ---
     function startNewQuestion() {
         const quizData = {
             question: "Which parts are essential for the Respiratory process?",
-            options: ["Nasal Cavity", "Trachea", "Small Intestine", "Gallbladder"],
-            correctIndices: [0, 1] 
+            options: ["Nasal Cavity", "Trachea", "Stomach", "Femur"],
+            correctIndices: [0, 1]
         };
         socket.emit('trigger-question', quizData);
+        document.getElementById('start-btn').style.display = 'none';
+        document.getElementById('close-btn').style.display = 'block';
     }
 
-    // --- UPDATED LEADERBOARD SYNC ---
-    socket.on('update-leaderboard', (data) => {
-        // Sync the local object with incoming data
-        if(data.fullList) {
-            playersData = data.fullList;
-        } else {
-            playersData[data.username] = data.score;
-        }
-        
+    function adminCloseQuiz() {
+        socket.emit('close-quiz-manual');
+        document.getElementById('start-btn').style.display = 'block';
+        document.getElementById('close-btn').style.display = 'none';
+    }
+
+    // --- SOCKET LISTENERS ---
+    socket.on('update-leaderboard', (allPlayers) => {
+        playersData = allPlayers;
         const list = document.getElementById('rank-list');
         list.innerHTML = "";
-        const sorted = Object.entries(playersData).sort((a, b) => b[1] - a[1]);
         
-        sorted.forEach(([user, score]) => {
+        const sorted = Object.values(playersData).sort((a, b) => b.score - a.score);
+        sorted.forEach(p => {
             const div = document.createElement('div');
             div.className = "rank-item";
-            div.innerHTML = `<span>${user}</span> <b>${score} pts</b>`;
+            div.innerHTML = `<div><b>${p.username}</b><span class="group-tag">${p.group || 'Leader'}</span></div> <b>${p.score}</b>`;
             list.appendChild(div);
         });
     });
@@ -242,65 +218,44 @@
     socket.on('show-quiz-overlay', (data) => {
         const overlay = document.getElementById('quiz-overlay');
         const optionsBox = document.getElementById('quiz-options');
-        
         overlay.style.display = 'flex';
         document.getElementById('question-text').innerText = data.question;
         optionsBox.innerHTML = "";
-        clicksRemaining = data.correctIndices.length;
-        document.getElementById('clicks-left').innerText = clicksRemaining;
+        
+        let localClicks = data.correctIndices.length;
 
         data.options.forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = "quiz-opt";
             btn.innerText = opt;
             btn.onclick = () => {
-                if(currentRole === "leader") return; 
-                if(clicksRemaining > 0) {
-                    if(data.correctIndices.includes(idx)) {
-                        btn.classList.add('selected-correct');
-                        myScore += 10;
-                        document.getElementById('p-score-board').innerText = myScore;
-                        socket.emit('score-update', { username: myUsername, score: myScore });
-                    }
-                    clicksRemaining--;
-                    document.getElementById('clicks-left').innerText = clicksRemaining;
-                    btn.disabled = true;
+                if(currentRole === "leader" || localClicks <= 0) return;
+                if(data.correctIndices.includes(idx)) {
+                    btn.classList.add('selected-correct');
+                    myScore += 10;
+                    document.getElementById('p-score-board').innerText = myScore;
+                    socket.emit('score-update', { username: myUsername, score: myScore, group: myGroup });
                 }
+                localClicks--;
+                btn.disabled = true;
             };
             optionsBox.appendChild(btn);
         });
-
-        let time = 10;
-        const timer = setInterval(() => {
-            time--;
-            document.getElementById('timer-display').innerText = time;
-            if(time <= 0) {
-                clearInterval(timer);
-                setTimeout(() => overlay.style.display = 'none', 1000);
-            }
-        }, 1000);
     });
 
-    function toggleZoom(e) {
-        if(e.target.tagName !== 'BUTTON' && e.target.className !== 'tap-node') {
-            document.getElementById('zoom-container').classList.toggle('zoomed');
-        }
-    }
+    socket.on('hide-quiz-overlay', () => {
+        document.getElementById('quiz-overlay').style.display = 'none';
+    });
 
-    function showData(title, desc, type) {
+    // --- UI HELPERS ---
+    function toggleZoom(e) { if(e.target.tagName !== 'BUTTON') document.getElementById('zoom-container').classList.toggle('zoomed'); }
+    function showData(t, d, type) {
         event.stopPropagation();
-        document.getElementById('mTitle').innerText = title;
-        document.getElementById('mDesc').innerText = desc;
-        const mediaBox = document.getElementById('mediaBox');
-        if(type === 'video') {
-            mediaBox.innerHTML = '<iframe width="100%" height="100%" src="https://www.youtube.com/embed/mOKmjYwfDGU" frameborder="0" allowfullscreen></iframe>';
-        } else if(type === 'image') {
-            mediaBox.innerHTML = `<img src="https://picsum.photos/seed/${title}/400/300" style="width:100%; height:100%; object-fit:cover;">`;
-        }
+        document.getElementById('mTitle').innerText = t;
+        document.getElementById('mDesc').innerText = d;
         document.getElementById('modal').classList.add('active');
         document.getElementById('overlay').style.display = 'block';
     }
-
     function closeModal() {
         document.getElementById('modal').classList.remove('active');
         document.getElementById('overlay').style.display = 'none';
