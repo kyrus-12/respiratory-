@@ -53,6 +53,8 @@
             cursor: pointer;
             z-index: 5001;
             transition: 0.3s;
+            padding: 10px;
+            line-height: 1;
         }
         .quiz-close-btn:hover {
             color: var(--accent);
@@ -155,7 +157,7 @@
     </div>
 
     <div id="zoom-container" onclick="toggleZoom(event)">
-        <img src="https://imgur.com/5YQmThC.png " class="base-img">
+        <img src="https://imgur.com/5YQmThC.png" class="base-img">
         <button class="cover-btn" style="top: 18%; left: 8%; border-color: #ff4757;" onclick="showData('Nasal Cavity', 'Filters, warms, and moistens air.', 'video')">Nasal Cavity</button>
         <button class="cover-btn" style="top: 61%; left: 9%; border-color: #48dbfb;" onclick="showData('Trachea', 'The tube connecting throat to lungs.', 'video')">Trachea</button>
     </div>
@@ -227,15 +229,28 @@
         document.getElementById('start-btn').disabled = false;
     }
 
-    // --- PLAYER CLOSE FUNCTION ---
+    // ============================================
+    // FIXED CLOSE FUNCTION - NOW WORKS FOR EVERYONE
+    // ============================================
     function closeQuizOverlay() {
-        // Only allow players to close, admin uses adminCloseQuiz
-        if(currentRole === "player") {
-            document.getElementById('quiz-overlay').style.display = 'none';
-            if(currentCountdown) clearInterval(currentCountdown);
-            quizActive = false;
-            hasAnswered = false;
+        // Clear any running timer first
+        if(currentCountdown) {
+            clearInterval(currentCountdown);
+            currentCountdown = null;
         }
+        
+        // Hide the overlay
+        document.getElementById('quiz-overlay').style.display = 'none';
+        
+        // Reset state
+        quizActive = false;
+        hasAnswered = false;
+        
+        // Reset status text color for next time
+        document.getElementById('status-text').style.color = "#f1c40f";
+        document.getElementById('status-text').innerText = "Hurry! Choose correctly!";
+        
+        console.log("Quiz closed by", currentRole);
     }
 
     // --- SOCKETS ---
@@ -265,6 +280,7 @@
         overlay.style.display = 'flex';
         document.getElementById('question-text').innerText = data.question;
         document.getElementById('status-text').innerText = "Hurry! Choose correctly!";
+        document.getElementById('status-text').style.color = "#f1c40f";
         optionsBox.innerHTML = "";
         
         let timeLeft = data.timer;
@@ -286,7 +302,7 @@
                     myScore += 10;
                     document.getElementById('p-score-board').innerText = myScore;
                     
-                    // EMIT SCORE TO SERVER - This was missing!
+                    // EMIT SCORE TO SERVER
                     socket.emit('score-update', { 
                         username: myUsername,
                         group: myGroup, 
@@ -309,12 +325,13 @@
             optionsBox.appendChild(btn);
         });
 
-        // Timer Logic - FIXED: Auto-close after timer ends
+        // Timer Logic
         currentCountdown = setInterval(() => {
             timeLeft--;
             timerEl.innerText = timeLeft;
             if(timeLeft <= 0) {
                 clearInterval(currentCountdown);
+                currentCountdown = null;
                 quizActive = false;
                 
                 // REVEAL ANSWERS
@@ -329,8 +346,7 @@
                 // AUTO-CLOSE FOR PLAYERS after 3 seconds
                 if(currentRole === "player") {
                     setTimeout(() => {
-                        document.getElementById('quiz-overlay').style.display = 'none';
-                        hasAnswered = false;
+                        closeQuizOverlay(); // Use the close function
                     }, 3000);
                 }
                 
@@ -344,11 +360,7 @@
     });
 
     socket.on('hide-quiz-overlay', () => {
-        document.getElementById('quiz-overlay').style.display = 'none';
-        document.getElementById('status-text').innerText = "Hurry! Choose correctly!";
-        document.getElementById('status-text').style.color = "#f1c40f";
-        hasAnswered = false;
-        if(currentCountdown) clearInterval(currentCountdown);
+        closeQuizOverlay(); // Use the close function
     });
 
     // --- UI HELPERS ---
