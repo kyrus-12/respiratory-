@@ -63,7 +63,16 @@
         }
         .quiz-close-btn:hover { color: var(--accent); transform: scale(1.2); }
         .quiz-timer { font-size: 4rem; font-weight: 900; color: var(--accent); margin-bottom: 10px; }
-        .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 80%; max-width: 600px; margin-top: 20px; }
+        .quiz-counter {
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 20px;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            color: #f1c40f;
+            font-weight: bold;
+        }
+        .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 80%; max-width: 600px; margin-top: 10px; }
         .quiz-opt { 
             padding: 18px; 
             background: #34495e; 
@@ -105,6 +114,8 @@
             position: absolute; top: 15px; left: 15px; width: 260px;
             background: white; border-radius: 10px; padding: 12px;
             box-shadow: var(--btn-shadow); z-index: 6000; transition: 0.3s;
+            max-height: 300px;
+            overflow-y: auto;
         }
         #leaderboard.minimized { width: 60px; height: 30px; overflow: hidden; cursor: pointer; background: var(--primary); }
         #leaderboard.minimized .rank-content, #leaderboard.minimized h3 { display: none; }
@@ -200,7 +211,7 @@
             100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); }
         }
 
-        /* ADMIN CONTROLS */
+        /* ADMIN CONTROLS - COMPACT */
         .admin-controls { 
             position: absolute; 
             top: 15px; 
@@ -208,43 +219,48 @@
             z-index: 100; 
             display: flex; 
             flex-direction: column;
-            gap: 10px; 
-            max-height: 80vh;
+            gap: 5px; 
+            max-height: 70vh;
             overflow-y: auto;
+            width: 200px;
         }
         .trigger-btn { 
             background: var(--accent); 
             color: white; 
             border: none; 
-            padding: 12px 20px; 
-            border-radius: 8px; 
+            padding: 8px 12px; 
+            border-radius: 6px; 
             font-weight: bold; 
             cursor: pointer; 
             box-shadow: var(--btn-shadow);
-            white-space: nowrap;
+            font-size: 0.85rem;
         }
         .question-btn {
             background: #3498db;
             color: white;
             border: none;
-            padding: 10px 15px;
-            border-radius: 8px;
+            padding: 6px 10px;
+            border-radius: 6px;
             font-weight: bold;
             cursor: pointer;
             box-shadow: var(--btn-shadow);
-            font-size: 0.9rem;
+            font-size: 0.75rem;
             text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .question-btn:hover { background: #2980b9; }
         .close-quiz-btn { 
             background: var(--warning); 
             color: white; 
             border: none; 
-            padding: 12px 20px; 
-            border-radius: 8px; 
+            padding: 8px 12px; 
+            border-radius: 6px; 
             font-weight: bold; 
             cursor: pointer; 
             display: none;
+            font-size: 0.85rem;
         }
 
         /* POPUP MODAL */
@@ -269,36 +285,50 @@
         .builder-input { 
             display: block; 
             width: 90%; 
-            margin: 10px auto; 
-            padding: 10px; 
+            margin: 8px auto; 
+            padding: 8px; 
             border: 1px solid #ccc; 
-            border-radius: 8px; 
-            font-size: 1rem;
+            border-radius: 6px; 
+            font-size: 0.9rem;
         }
         .option-row {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
-            margin: 5px 0;
+            margin: 4px 0;
+            font-size: 0.85rem;
         }
-        .option-row input[type="text"] { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
-        .correct-checkbox { width: 20px; height: 20px; cursor: pointer; }
+        .option-row input[type="text"] { 
+            flex: 1; 
+            padding: 6px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            font-size: 0.85rem;
+        }
+        .correct-checkbox { width: 18px; height: 18px; cursor: pointer; }
         .add-btn {
             background: var(--success);
             color: white;
             border: none;
-            padding: 8px 15px;
-            border-radius: 6px;
+            padding: 6px 12px;
+            border-radius: 4px;
             cursor: pointer;
-            margin: 5px;
+            margin: 4px;
+            font-size: 0.85rem;
         }
         .remove-btn {
             background: #e74c3c;
             color: white;
             border: none;
-            padding: 5px 10px;
-            border-radius: 6px;
+            padding: 4px 8px;
+            border-radius: 4px;
             cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .builder-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin: 5px 0;
         }
     </style>
 </head>
@@ -328,10 +358,11 @@
 <div id="quiz-overlay">
     <button class="quiz-close-btn" onclick="closeQuizOverlay()" title="Close Quiz">×</button>
     <div class="quiz-timer" id="global-timer">10</div>
-    <h2 id="question-text" style="text-align:center; max-width: 80%;">Question</h2>
+    <div class="quiz-counter" id="answer-counter">Select 2 answers</div>
+    <h2 id="question-text" style="text-align:center; max-width: 80%; margin: 10px 0;">Question</h2>
     <div class="quiz-options" id="quiz-options"></div>
     <button class="submit-btn" id="submit-btn" onclick="submitAnswer()" disabled>SUBMIT ANSWER</button>
-    <p id="status-text" style="margin-top:20px; color:#f1c40f;">Select all correct answers!</p>
+    <p id="status-text" style="margin-top:15px; color:#f1c40f; font-size: 0.9rem;">Select all correct answers!</p>
 </div>
 
 <!-- MAIN MODAL -->
@@ -350,7 +381,7 @@
     <!-- ADMIN CONTROLS -->
     <div class="admin-controls" id="admin-ui" style="display:none;">
         <button class="trigger-btn" onclick="openQuestionBuilder()">➕ ADD QUESTION</button>
-        <div id="questions-list" style="display:flex; flex-direction:column; gap:5px;"></div>
+        <div id="questions-list" style="display:flex; flex-direction:column; gap:3px;"></div>
         <button id="close-btn" class="close-quiz-btn" onclick="adminCloseQuiz()">🛑 CLOSE QUIZ</button>
     </div>
 
@@ -398,7 +429,7 @@
         <div class="tap-node" style="top: 77%; left: 50%; background: #00d8d6;" onclick="showData('L-Bronchus Tip', 'Left lung entry.', 'image')"></div>
         <div class="tap-node" style="top: 84%; left: 41%; background: #0fbcf9;" onclick="showData('R-Lung Base', 'Bottom of right lung.', 'image')"></div>
         <div class="tap-node" style="top: 82%; left: 57%; background: #0be881;" onclick="showData('L-Lung Base', 'Bottom of left lung.', 'image')"></div>
-        <div class="tap-node" style="top: 46%; left: 44%; background: #ffa501;" onclick="showData('Tounge', 'Deep lung branching.', 'image')"></div>
+        <div class="tap-node" style="top: 46%; left: 44%; background: #ffa501;" onclick="showData('Tongue', 'Deep lung branching.', 'image')"></div>
         <div class="tap-node" style="top: 93%; left: 50%; background: #222f3e;" onclick="showData('Diaphragm', 'Left muscle side.', 'video')"></div>
         <div class="tap-node" style="top: 37%; left: 47%; background: #f53b58;" onclick="showData('Pharyngeal Tonsil', '', 'video')"></div>
         <div class="tap-node" style="top: 40%; left: 48%; background: #8c7ae7;" onclick="showData('Nasopharynx', 'Immune node.', 'image')"></div>
@@ -414,14 +445,15 @@
 </div>
 
 <!-- QUESTION BUILDER MODAL -->
-<div class="modal" id="builder-modal" style="max-width: 600px;">
+<div class="modal" id="builder-modal" style="max-width: 500px;">
     <span class="close-btn" onclick="closeBuilder()">×</span>
     <h2>Create Question</h2>
     <input type="text" id="builder-question" class="builder-input" placeholder="Enter question text...">
-    <input type="number" id="builder-timer" class="builder-input" placeholder="Timer in seconds (default: 30)" value="30">
+    <input type="number" id="builder-timer" class="builder-input" placeholder="Timer in seconds (default: 30)" value="30" min="5" max="300">
+    <div class="builder-label">Options (check box for correct answers):</div>
     <div id="builder-options"></div>
     <button class="add-btn" onclick="addOptionRow()">+ Add Option</button>
-    <button class="trigger-btn" style="width:100%; margin-top:15px;" onclick="saveQuestion()">💾 SAVE QUESTION</button>
+    <button class="trigger-btn" style="width:100%; margin-top:10px;" onclick="saveQuestion()">💾 SAVE QUESTION</button>
 </div>
 
 <script>
@@ -435,16 +467,16 @@
     let hasSubmitted = false;
     let selectedAnswers = [];
     let currentQuestion = null;
-    let questions = []; // Store all questions
+    let questions = [];
 
     function login() {
-        const name = document.getElementById('user-name').value;
-        const group = document.getElementById('group-id').value;
+        const name = document.getElementById('user-name').value.trim();
+        const group = document.getElementById('group-id').value.trim();
         const pass = document.getElementById('pass-id').value;
         
         if(!name || !pass) return alert("Please fill Name and Password");
 
-        if(group.trim() === "") {
+        if(group === "") {
             if(pass !== "renz123") return alert("Admin Password Incorrect");
             currentRole = "leader";
             document.getElementById('admin-ui').style.display = 'flex';
@@ -461,13 +493,14 @@
         socket.emit('user-join', { username: name, group: group, role: currentRole });
     }
 
-    function toggleRank() { document.getElementById('leaderboard').classList.toggle('minimized'); }
+    function toggleRank() { 
+        document.getElementById('leaderboard').classList.toggle('minimized'); 
+    }
 
     // --- QUESTION BUILDER ---
     function openQuestionBuilder() {
         document.getElementById('builder-modal').classList.add('active');
         document.getElementById('overlay').style.display = 'block';
-        // Add 4 default options
         document.getElementById('builder-options').innerHTML = '';
         for(let i=0; i<4; i++) addOptionRow();
     }
@@ -483,14 +516,14 @@
         row.className = 'option-row';
         row.innerHTML = `
             <input type="text" placeholder="Option text..." class="opt-text">
-            <input type="checkbox" class="correct-checkbox" title="Mark as correct">
+            <input type="checkbox" class="correct-checkbox" title="Correct answer">
             <button class="remove-btn" onclick="this.parentElement.remove()">×</button>
         `;
         container.appendChild(row);
     }
 
     function saveQuestion() {
-        const questionText = document.getElementById('builder-question').value;
+        const questionText = document.getElementById('builder-question').value.trim();
         const timer = parseInt(document.getElementById('builder-timer').value) || 30;
         
         if(!questionText) return alert("Please enter a question!");
@@ -499,7 +532,7 @@
         const correctIndices = [];
         
         document.querySelectorAll('#builder-options .option-row').forEach((row, index) => {
-            const text = row.querySelector('.opt-text').value;
+            const text = row.querySelector('.opt-text').value.trim();
             const isCorrect = row.querySelector('.correct-checkbox').checked;
             if(text) {
                 options.push(text);
@@ -515,7 +548,8 @@
             question: questionText,
             options: options,
             correctIndices: correctIndices,
-            timer: timer
+            timer: timer,
+            correctCount: correctIndices.length
         };
         
         questions.push(questionData);
@@ -524,6 +558,7 @@
         
         // Clear builder
         document.getElementById('builder-question').value = '';
+        document.getElementById('builder-timer').value = '30';
         document.getElementById('builder-options').innerHTML = '';
         for(let i=0; i<4; i++) addOptionRow();
     }
@@ -534,7 +569,8 @@
         questions.forEach((q, idx) => {
             const btn = document.createElement('button');
             btn.className = 'question-btn';
-            btn.innerHTML = `Q${idx+1}: ${q.question.substring(0, 30)}...`;
+            btn.title = q.question;
+            btn.innerHTML = `Q${idx+1}: ${q.question.substring(0, 25)}${q.question.length > 25 ? '...' : ''}`;
             btn.onclick = () => startQuestion(q);
             container.appendChild(btn);
         });
@@ -577,7 +613,7 @@
         submitBtn.disabled = true;
         submitBtn.innerText = "SUBMITTED!";
         
-        // Check if all selected answers are correct and no correct answers missed
+        // Check answers
         const allCorrectSelected = currentQuestion.correctIndices.every(idx => selectedAnswers.includes(idx));
         const noWrongSelected = selectedAnswers.every(idx => currentQuestion.correctIndices.includes(idx));
         const isCorrect = allCorrectSelected && noWrongSelected && selectedAnswers.length > 0;
@@ -598,16 +634,14 @@
             document.getElementById('status-text').style.color = "#e74c3c";
         }
         
-        // Disable all options
+        // Disable all options and show correct/wrong
         document.querySelectorAll('.quiz-opt').forEach(b => b.disabled = true);
         
-        // Highlight correct answers
         currentQuestion.correctIndices.forEach(idx => {
             const btn = document.getElementById("opt-" + idx);
             if(btn) btn.classList.add('correct-reveal');
         });
         
-        // Highlight wrong selections
         selectedAnswers.forEach(idx => {
             if(!currentQuestion.correctIndices.includes(idx)) {
                 const btn = document.getElementById("opt-" + idx);
@@ -629,17 +663,48 @@
             btn.classList.add('selected');
         }
         
-        // Enable submit button only if at least one selected
         document.getElementById('submit-btn').disabled = selectedAnswers.length === 0;
+        
+        // Update counter
+        updateAnswerCounter();
+    }
+
+    function updateAnswerCounter() {
+        if(!currentQuestion) return;
+        const required = currentQuestion.correctCount || currentQuestion.correctIndices.length;
+        const selected = selectedAnswers.length;
+        const counter = document.getElementById('answer-counter');
+        
+        if(required === 1) {
+            counter.innerText = `Select ${required} answer (${selected} selected)`;
+        } else {
+            counter.innerText = `Select ${required} answers (${selected} selected)`;
+        }
+        
+        if(selected === required) {
+            counter.style.background = "rgba(46, 204, 113, 0.3)";
+            counter.style.color = "#2ecc71";
+        } else {
+            counter.style.background = "rgba(255,255,255,0.2)";
+            counter.style.color = "#f1c40f";
+        }
     }
 
     // --- SOCKETS ---
     socket.on('update-leaderboard', (allGroups) => {
         const list = document.getElementById('rank-list');
         list.innerHTML = "";
-        const sortedGroups = Object.entries(allGroups).sort((a, b) => b[1] - a[1]);
+        
+        if(!allGroups || Object.keys(allGroups).length === 0) {
+            list.innerHTML = '<div class="rank-item" style="color:#999;">No scores yet</div>';
+            return;
+        }
+        
+        const sortedGroups = Object.entries(allGroups)
+            .filter(([name, score]) => name && name !== "undefined" && name !== "")
+            .sort((a, b) => b[1] - a[1]);
+            
         sortedGroups.forEach(([groupName, score]) => {
-            if(!groupName || groupName === "undefined") return;
             const div = document.createElement('div');
             div.className = "rank-item";
             div.innerHTML = `<span><b>${groupName}</b></span> <span class="group-pill">${score} PTS</span>`;
@@ -656,6 +721,7 @@
         const overlay = document.getElementById('quiz-overlay');
         const optionsBox = document.getElementById('quiz-options');
         const timerEl = document.getElementById('global-timer');
+        const counterEl = document.getElementById('answer-counter');
         
         overlay.style.display = 'flex';
         document.getElementById('question-text').innerText = data.question;
@@ -665,10 +731,17 @@
         document.getElementById('submit-btn').innerText = "SUBMIT ANSWER";
         document.getElementById('submit-btn').disabled = true;
         
+        // Show answer counter
+        const required = data.correctCount || data.correctIndices.length;
+        counterEl.style.display = "block";
+        counterEl.style.background = "rgba(255,255,255,0.2)";
+        counterEl.style.color = "#f1c40f";
+        updateAnswerCounter();
+        
         let timeLeft = data.timer;
         timerEl.innerText = timeLeft;
 
-        // Create buttons
+        // Create option buttons
         data.options.forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = "quiz-opt";
@@ -688,7 +761,7 @@
                 quizActive = false;
                 
                 if(!hasSubmitted) {
-                    submitAnswer(); // Auto-submit on timeout
+                    submitAnswer();
                 }
                 
                 document.getElementById('status-text').innerText = "TIME UP! Closing in 3 seconds...";
@@ -725,7 +798,7 @@
         if(type === 'video') {
             mediaBox.innerHTML = '<iframe width="100%" height="100%" src="https://www.youtube.com/embed/mOKmjYwfDGU" frameborder="0" allowfullscreen></iframe>';
         } else if(type === 'image') {
-            mediaBox.innerHTML = '<img src="https://picsum.photos/seed/' + title + '/400/300" style="width:100%; height:100%; object-fit:cover;">';
+            mediaBox.innerHTML = '<img src="https://picsum.photos/seed/' + encodeURIComponent(title) + '/400/300" style="width:100%; height:100%; object-fit:cover;">';
         } else {
             mediaBox.innerHTML = '<div style="padding:20px; color:white; text-align:center;">Information for ' + title + ' is being displayed.</div>';
         }
