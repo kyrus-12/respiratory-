@@ -47,6 +47,7 @@
             position: absolute; top: 20px; right: 30px;
             background: transparent; border: none; color: white;
             font-size: 2.5rem; cursor: pointer; z-index: 5001; transition: 0.3s;
+            display: none; /* Only visible to Leader */
         }
         .quiz-timer { font-size: 4rem; font-weight: 900; color: var(--accent); margin-bottom: 10px; }
         .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 80%; max-width: 600px; margin-top: 20px; }
@@ -56,18 +57,18 @@
             transition: 0.3s; position: relative; overflow: hidden;
         }
         
-        /* Highlight clicked answers Blue */
         .player-selected { background: #3498db !important; box-shadow: 0 0 15px #3498db; }
+        .correct-answer { background: var(--success) !important; box-shadow: 0 0 20px var(--success); transform: scale(1.05); z-index: 2; }
         
         .quiz-opt:hover:not(:disabled) { background: #4a6278; transform: translateY(-2px); }
-        .quiz-opt:disabled { cursor: not-allowed; opacity: 0.7; }
+        .quiz-opt:disabled { cursor: not-allowed; opacity: 1; color: white; }
 
         /* --- LEADERBOARD --- */
         #leaderboard {
             position: absolute; top: 15px; left: 15px; width: 260px;
             background: white; border-radius: 10px; padding: 12px;
             box-shadow: var(--btn-shadow); z-index: 6000; transition: 0.3s;
-            display: none; /* Hidden by default, shown only to Admin */
+            display: none;
         }
         #leaderboard.minimized { width: 60px; height: 30px; overflow: hidden; cursor: pointer; background: var(--primary); }
         #leaderboard.minimized .rank-content, #leaderboard.minimized h3 { display: none; }
@@ -96,12 +97,6 @@
         .modal.active { visibility: visible; opacity: 1; transform: translate(-50%, -50%) scale(1); }
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; z-index: 2000; }
         
-        .group-indicator {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 20px;
-            font-size: 0.9rem; color: #ecf0f1;
-        }
-        
         #yt-player { position: absolute; width: 0; height: 0; opacity: 0; pointer-events: none; }
         
         .click-counter {
@@ -129,12 +124,12 @@
     <h1>Student Dashboard</h1>
     <div id="p-score-board" style="font-size: 4rem; color: var(--success); font-weight: bold;">0</div>
     <p id="group-display" style="font-weight:bold; color:#ecf0f1;"></p>
-    <p>Wait for the teacher to start the quiz...</p>
-    <div class="group-indicator" id="group-members-count">Waiting for group members...</div>
+    <p>Get ready for the quiz...</p>
+    <div class="group-indicator" id="group-members-count" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);">Waiting for group members...</div>
 </div>
 
 <div id="quiz-overlay">
-    <button class="quiz-close-btn" onclick="closeQuizOverlay()">×</button>
+    <button id="leader-close-x" class="quiz-close-btn" onclick="closeQuizOverlay()">×</button>
     <div class="click-counter" id="clicks-remaining">Clicks: 0/0</div>
     <div class="quiz-timer" id="global-timer">10</div>
     <h2 id="question-text" style="text-align:center;">Question</h2>
@@ -192,7 +187,7 @@
         player = new YT.Player('yt-player', {
             height: '0', width: '0',
             videoId: playlist[0],
-            events: { 'onReady': (e) => console.log("Music Engine Ready") }
+            events: { 'onReady': (e) => console.log("Music Ready") }
         });
     }
 
@@ -204,33 +199,31 @@
         }
     }
 
-    function stopMusic() {
-        if(player && player.stopVideo) player.stopVideo();
-    }
+    function stopMusic() { if(player && player.stopVideo) player.stopVideo(); }
 
     // --- LOGIN ---
     function login() {
         const name = document.getElementById('user-name').value;
         const group = document.getElementById('group-id').value;
         const pass = document.getElementById('pass-id').value;
-        if(!name || !pass) return alert("Fill Name and Password");
+        if(!name || !pass) return alert("Missing Info");
 
         if(group.trim() === "") {
-            if(pass !== "renz123") return alert("Admin Password Incorrect");
+            if(pass !== "renz123") return alert("Wrong Password");
             currentRole = "leader";
             document.getElementById('admin-ui').style.display = 'flex';
-            document.getElementById('leaderboard').style.display = 'block'; // Admin sees ranking
-            document.getElementById('main-wrapper').style.display = 'block';
+            document.getElementById('leaderboard').style.display = 'block';
+            document.getElementById('leader-close-x').style.display = 'block';
         } else {
             currentRole = "player";
             myGroup = group;
             document.getElementById('group-display').innerText = "GROUP: " + group;
             document.getElementById('waiting-screen').style.display = 'flex';
-            document.getElementById('leaderboard').style.display = 'none'; // Players do NOT see ranking
-            document.getElementById('main-wrapper').style.display = 'block';
+            document.getElementById('leader-close-x').style.display = 'none';
         }
         myUsername = name;
         document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('main-wrapper').style.display = 'block';
         socket.emit('user-join', { username: name, group: group, role: currentRole });
     }
 
@@ -264,10 +257,10 @@
         if (currentQuestionIndex < allQuizData.length) {
             socket.emit('trigger-question', allQuizData[currentQuestionIndex]);
             document.getElementById('start-btn').disabled = true;
-            document.getElementById('start-btn').innerText = "QUESTION IN PROGRESS...";
+            document.getElementById('start-btn').innerText = "IN PROGRESS...";
             currentQuestionIndex++; 
         } else {
-            alert("Quiz Session Ended.");
+            alert("Quiz Over.");
             currentQuestionIndex = 0;
             resetQuizUI();
         }
@@ -283,7 +276,7 @@
         document.getElementById('start-btn').style.display = 'block';
         document.getElementById('start-btn').disabled = false;
         document.getElementById('start-btn').innerText = "🚀 START NEXT QUESTION";
-        stopMusic();
+        closeQuizOverlay();
     }
 
     function closeQuizOverlay() {
@@ -298,15 +291,14 @@
         hasSubmitted = false;
         groupSelections = [];
         currentQuestionData = data;
-        
-        // Function Music Trigger
         playRandomMusic();
         
         const overlay = document.getElementById('quiz-overlay');
         const optionsBox = document.getElementById('quiz-options');
         overlay.style.display = 'flex';
         document.getElementById('question-text').innerText = data.question;
-        document.getElementById('clicks-remaining').innerText = `Group Selections: 0/${data.correctIndices.length}`;
+        document.getElementById('status-text').innerText = "Select your answers!";
+        document.getElementById('clicks-remaining').innerText = `Selections: 0/${data.correctIndices.length}`;
         optionsBox.innerHTML = "";
         
         data.options.forEach((opt, idx) => {
@@ -339,17 +331,13 @@
 
     socket.on('group-selection-update', (data) => {
         const btn = document.getElementById("opt-" + data.optionIndex);
-        if(!btn) return;
-        
-        btn.disabled = true;
-        btn.classList.add('player-selected'); // Highlight Blue
-        
-        groupSelections = data.selectionsSoFar;
-        document.getElementById('clicks-remaining').innerText = `Group Selections: ${groupSelections.length}/${data.maxClicks}`;
-        
-        if(groupSelections.length >= data.maxClicks && !hasSubmitted && currentRole === "player") {
-            submitPoints();
+        if(btn) {
+            btn.disabled = true;
+            btn.classList.add('player-selected');
         }
+        groupSelections = data.selectionsSoFar;
+        document.getElementById('clicks-remaining').innerText = `Selections: ${groupSelections.length}/${data.maxClicks}`;
+        if(groupSelections.length >= data.maxClicks && !hasSubmitted && currentRole === "player") submitPoints();
     });
 
     function submitPoints() {
@@ -363,16 +351,27 @@
     function handleTimeUp() {
         quizActive = false;
         stopMusic();
-        if(currentRole === "leader") {
+        
+        // Reveal Answers (Turn Green)
+        currentQuestionData.correctIndices.forEach(idx => {
+            const btn = document.getElementById("opt-" + idx);
+            if(btn) btn.classList.add('correct-answer');
+        });
+
+        document.getElementById('status-text').innerText = "Time's up! Correct answers revealed.";
+
+        if(currentRole === "player") {
+            if(!hasSubmitted) submitPoints();
+            // Automatic close for players
+            setTimeout(closeQuizOverlay, 3000);
+        } else {
+            // Leader stays open to show answers
             document.getElementById('close-btn').style.display = 'block';
-        } else if(!hasSubmitted) {
-            submitPoints();
         }
-        setTimeout(closeQuizOverlay, 3000);
     }
 
     socket.on('update-leaderboard', (leaderboard) => {
-        if(currentRole !== "leader") return; // Safety check
+        if(currentRole !== "leader") return;
         const list = document.getElementById('rank-list');
         list.innerHTML = "";
         Object.entries(leaderboard).sort((a,b) => b[1]-a[1]).forEach(([name, score]) => {
@@ -393,4 +392,4 @@
     window.addEventListener('beforeunload', () => socket.emit('user-leave', { username: myUsername, group: myGroup }));
 </script>
 </body>
-    </html>
+</html>
