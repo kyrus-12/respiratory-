@@ -53,7 +53,6 @@
         .quiz-opt:hover:not(:disabled) { background: #4a6278; transform: translateY(-2px); }
         .correct-reveal { background: var(--success) !important; box-shadow: 0 0 20px var(--success); transform: scale(1.05); }
         .wrong-reveal { background: #e74c3c !important; }
-        .selected-pending { border: 3px solid #f1c40f; background: #2c3e50; }
 
         /* --- LEADERBOARD --- */
         #leaderboard {
@@ -192,11 +191,16 @@
         if (currentQuestionIndex < allQuizData.length) {
             const quizDataToSend = allQuizData[currentQuestionIndex];
             socket.emit('trigger-question', quizDataToSend);
+            
+            // Disable button during the active question
             document.getElementById('start-btn').disabled = true;
-            currentQuestionIndex++; // Increment so next click pulls next question
+            document.getElementById('start-btn').innerText = "QUESTION IN PROGRESS...";
+            
+            currentQuestionIndex++; 
         } else {
-            alert("Quiz Complete! No more questions.");
-            currentQuestionIndex = 0; // Reset for next time if desired
+            alert("Quiz Complete! Resetting to start.");
+            currentQuestionIndex = 0;
+            resetQuizUI();
         }
     }
 
@@ -259,7 +263,7 @@
                 document.getElementById('status-text').innerText = `Choices: ${clicksUsed}/${maxClicks}`;
 
                 if(clicksUsed === maxClicks) {
-                    quizActive = false; // Stop further clicking
+                    quizActive = false; 
                     myScore += pointsThisRound;
                     document.getElementById('p-score-board').innerText = myScore;
                     socket.emit('score-update', { username: myUsername, group: myGroup, score: myScore, pointsAdded: pointsThisRound });
@@ -277,8 +281,14 @@
                 quizActive = false;
                 data.correctIndices.forEach(ci => document.getElementById("opt-"+ci)?.classList.add('correct-reveal'));
                 
-                if(currentRole === "player") setTimeout(closeQuizOverlay, 3000);
+                document.getElementById('status-text').innerText = "TIME UP!";
+
+                if(currentRole === "player") {
+                    setTimeout(closeQuizOverlay, 3000);
+                }
+                
                 if(currentRole === "leader") {
+                    // Show the close button so the admin can reset the UI for the next question
                     document.getElementById('close-btn').style.display = 'block';
                     document.getElementById('start-btn').style.display = 'none';
                 }
@@ -290,7 +300,7 @@
         const list = document.getElementById('rank-list');
         list.innerHTML = "";
         Object.entries(allGroups).sort((a,b) => b[1]-a[1]).forEach(([name, score]) => {
-            if(!name) return;
+            if(!name || name === "undefined") return;
             const div = document.createElement('div');
             div.className = "rank-item";
             div.innerHTML = `<span><b>${name}</b></span> <span class="group-pill">${score} PTS</span>`;
@@ -298,7 +308,11 @@
         });
     });
 
-    socket.on('hide-quiz-overlay', closeQuizOverlay);
+    socket.on('hide-quiz-overlay', () => {
+        closeQuizOverlay();
+        if(currentRole === "leader") resetQuizUI(); // Ensure admin button is ready for next question
+    });
+
     function toggleZoom(e) { if(e.target.tagName !== 'BUTTON') document.getElementById('zoom-container').classList.toggle('zoomed'); }
     function showData(t, d) {
         event.stopPropagation();
