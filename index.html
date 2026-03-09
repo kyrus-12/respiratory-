@@ -58,11 +58,7 @@
         .quiz-opt:hover:not(:disabled) { background: #4a6278; transform: translateY(-2px); }
         .quiz-opt:disabled { cursor: not-allowed; opacity: 0.7; }
         
-        /* Player sees their selection only - no correct answer reveal */
         .player-selected { background: #3498db !important; box-shadow: 0 0 15px #3498db; }
-        .player-wrong { background: #e74c3c !important; }
-        
-        /* Admin sees correct answers */
         .admin-correct-reveal { background: var(--success) !important; box-shadow: 0 0 20px var(--success); }
         .admin-wrong-reveal { background: #e74c3c !important; }
 
@@ -89,7 +85,7 @@
         .admin-controls { position: absolute; top: 15px; right: 15px; z-index: 100; display: flex; gap: 10px; }
         .trigger-btn { background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .close-quiz-btn { background: #f39c12; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; display: none; }
-        .cover-btn { position: absolute; background: #ffffff; border: 2px solid; border-radius: 6px; font-weight: 800; cursor: pointer; width: 180px; height: 45px; }
+        .cover-btn { position: absolute; background: #ffffff; border: 2px solid; border-radius: 6px; font-weight: 800; cursor: pointer; width: 180px; height: 45px; z-index: 10; }
 
         .modal {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8);
@@ -99,17 +95,14 @@
         .modal.active { visibility: visible; opacity: 1; transform: translate(-50%, -50%) scale(1); }
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; z-index: 2000; }
         
-        /* Group indicator */
         .group-indicator {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
             background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 20px;
             font-size: 0.9rem; color: #ecf0f1;
         }
         
-        /* Hidden YT Player */
         #yt-player { position: absolute; width: 0; height: 0; opacity: 0; pointer-events: none; }
         
-        /* Click counter for group */
         .click-counter {
             position: absolute; top: 80px; right: 30px;
             background: rgba(255,255,255,0.1); padding: 10px 20px;
@@ -166,8 +159,8 @@
 
     <div id="zoom-container" onclick="toggleZoom(event)">
         <img src="https://imgur.com/5YQmThC.png" class="base-img">
-        <button class="cover-btn" style="top: 18%; left: 8%; border-color: #ff4757;" onclick="showData('Nasal Cavity', 'Filters, warms, and moistens air.', 'video')">Nasal Cavity</button>
-        <button class="cover-btn" style="top: 61%; left: 9%; border-color: #48dbfb;" onclick="showData('Trachea', 'The tube connecting throat to lungs.', 'video')">Trachea</button>
+        <button class="cover-btn" style="top: 18%; left: 8%; border-color: #ff4757;" onclick="showData(event, 'Nasal Cavity', 'Filters, warms, and moistens air.')">Nasal Cavity</button>
+        <button class="cover-btn" style="top: 61%; left: 9%; border-color: #48dbfb;" onclick="showData(event, 'Trachea', 'The tube connecting throat to lungs.')">Trachea</button>
     </div>
 </div>
 
@@ -188,10 +181,9 @@
     let currentCountdown = null;
     let currentQuestionIndex = 0;
     let currentQuestionData = null;
-    let groupSelections = []; // Track which options this group has selected
     let hasSubmitted = false;
 
-    // --- MUSIC SETTINGS ---
+    // --- MUSIC ---
     let player;
     const playlist = ["9p67S66SshQ", "t6osTfAsv9Y", "jfKfPfyJRdk"]; 
     
@@ -215,32 +207,20 @@
         if(player && player.stopVideo) player.stopVideo();
     }
 
-    // --- DATA RESET ON EXIT ---
-    window.addEventListener('beforeunload', () => {
-        socket.emit('user-leave', { username: myUsername, group: myGroup });
-    });
-
-    const allQuizData = [
-        { question: "Which of these are types of energy?", options: ["Kinetic", "Potential", "Chemical", "Electrical"], correctIndices: [0, 1, 2, 3], timer: 15 },
-        { question: "Identify the primary colors (in Art):", options: ["Red", "Green", "Blue", "Yellow"], correctIndices: [0, 2, 3], timer: 10 },
-        { question: "Select the planets in our solar system:", options: ["Mars", "Jupiter", "Andromeda", "Venus"], correctIndices: [0, 1, 3], timer: 12 },
-        { question: "Which of the following are fruits?", options: ["Carrot", "Apple", "Banana", "Potato"], correctIndices: [1, 2], timer: 8 },
-        { question: "Choose the even numbers:", options: ["1", "2", "3", "4", "5", "6"], correctIndices: [1, 3, 5], timer: 10 }
-    ];
-
+    // --- LOGIN ---
     function login() {
         const name = document.getElementById('user-name').value;
         const group = document.getElementById('group-id').value;
         const pass = document.getElementById('pass-id').value;
         if(!name || !pass) return alert("Fill Name and Password");
 
+        // Reveal the main workspace
         document.getElementById('main-wrapper').style.display = 'block';
 
         if(group.trim() === "") {
             if(pass !== "renz123") return alert("Admin Password Incorrect");
             currentRole = "leader";
             document.getElementById('admin-ui').style.display = 'flex';
-            document.getElementById('main-wrapper').style.display = 'block';
         } else {
             currentRole = "player";
             myGroup = group;
@@ -250,35 +230,51 @@
         myUsername = name;
         document.getElementById('login-screen').style.display = 'none';
         
-        // Join room for group synchronization
-        socket.emit('user-join', { 
-            username: name, 
-            group: group, 
-            role: currentRole 
-        });
+        socket.emit('user-join', { username: name, group: group, role: currentRole });
     }
 
-    function toggleRank() { 
-        document.getElementById('leaderboard').classList.toggle('minimized'); 
-    }
+    // --- INTERACTIVE SYSTEM ---
+    
 
-    function startNewQuestion() {
-        if (currentQuestionIndex < allQuizData.length) {
-            const quizDataToSend = allQuizData[currentQuestionIndex];
-            socket.emit('trigger-question', quizDataToSend);
-            document.getElementById('start-btn').disabled = true;
-            document.getElementById('start-btn').innerText = "QUESTION IN PROGRESS...";
-            currentQuestionIndex++; 
-        } else {
-            alert("Quiz Complete! Resetting to start.");
-            currentQuestionIndex = 0;
-            resetQuizUI();
+[Image of the human respiratory system]
+
+    function toggleZoom(e) { 
+        // Only zoom if the background image is clicked, not a button
+        if(e.target.classList.contains('base-img')) {
+            document.getElementById('zoom-container').classList.toggle('zoomed'); 
         }
     }
 
-    function adminCloseQuiz() {
-        socket.emit('close-quiz-manual');
-        resetQuizUI();
+    function showData(e, title, desc) {
+        if(e) e.stopPropagation(); // Stop zoom from firing
+        document.getElementById('mTitle').innerText = title;
+        document.getElementById('mDesc').innerText = desc;
+        document.getElementById('modal').classList.add('active');
+        document.getElementById('overlay').style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('modal').classList.remove('active');
+        document.getElementById('overlay').style.display = 'none';
+    }
+
+    // --- QUIZ LOGIC ---
+    const allQuizData = [
+        { question: "Which of these are types of energy?", options: ["Kinetic", "Potential", "Chemical", "Electrical"], correctIndices: [0, 1, 2, 3], timer: 15 },
+        { question: "Identify the primary colors (in Art):", options: ["Red", "Green", "Blue", "Yellow"], correctIndices: [0, 2, 3], timer: 10 }
+    ];
+
+    function startNewQuestion() {
+        if (currentQuestionIndex < allQuizData.length) {
+            socket.emit('trigger-question', allQuizData[currentQuestionIndex]);
+            document.getElementById('start-btn').disabled = true;
+            document.getElementById('start-btn').innerText = "IN PROGRESS...";
+            currentQuestionIndex++; 
+        } else {
+            alert("Quiz Complete!");
+            currentQuestionIndex = 0;
+            resetQuizUI();
+        }
     }
 
     function resetQuizUI() {
@@ -296,218 +292,47 @@
         stopMusic();
     }
 
-    // --- GROUP SYNCHRONIZATION LOGIC ---
-    
     socket.on('show-quiz-overlay', (data) => {
         quizActive = true;
         hasSubmitted = false;
-        groupSelections = []; // Reset group selections
         currentQuestionData = data;
-        
-        if(currentRole === "player") {
-            playRandomMusic();
-        }
+        if(currentRole === "player") playRandomMusic();
         
         const overlay = document.getElementById('quiz-overlay');
         const optionsBox = document.getElementById('quiz-options');
-        const timerEl = document.getElementById('global-timer');
-        const clicksEl = document.getElementById('clicks-remaining');
-        
         overlay.style.display = 'flex';
         document.getElementById('question-text').innerText = data.question;
-        document.getElementById('status-text').innerText = `Pick ${data.correctIndices.length} correct choice(s) as a group!`;
-        document.getElementById('status-text').style.color = "#f1c40f";
         optionsBox.innerHTML = "";
         
-        const maxClicks = data.correctIndices.length;
-        clicksEl.innerText = `Clicks: 0/${maxClicks}`;
-        
-        let timeLeft = data.timer;
-        timerEl.innerText = timeLeft;
-
-        // Create option buttons
         data.options.forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = "quiz-opt";
             btn.innerText = opt;
             btn.id = "opt-" + idx;
-            btn.dataset.index = idx;
-            
-            btn.onclick = () => handleOptionClick(idx, btn, maxClicks, data);
+            btn.onclick = () => handleOptionClick(idx, btn, data.correctIndices.length);
             optionsBox.appendChild(btn);
         });
 
-        // Start countdown
+        let timeLeft = data.timer;
+        document.getElementById('global-timer').innerText = timeLeft;
         currentCountdown = setInterval(() => {
             timeLeft--;
-            timerEl.innerText = timeLeft;
+            document.getElementById('global-timer').innerText = timeLeft;
             if(timeLeft <= 0) {
                 clearInterval(currentCountdown);
-                handleTimeUp(data);
+                closeQuizOverlay();
             }
         }, 1000);
     });
 
-    function handleOptionClick(index, btn, maxClicks, data) {
-        if(!quizActive || currentRole === "leader") return;
-        
-        // Emit to server for group synchronization
-        socket.emit('group-selection-attempt', {
-            group: myGroup,
-            optionIndex: index,
-            maxClicks: maxClicks,
-            questionIndex: currentQuestionIndex - 1
-        });
+    function toggleRank() { 
+        document.getElementById('leaderboard').classList.toggle('minimized'); 
     }
 
-    // Listen for group selection updates
-    socket.on('group-selection-update', (data) => {
-        const { optionIndex, selectionsSoFar, maxClicks, selector } = data;
-        const btn = document.getElementById("opt-" + optionIndex);
-        
-        if(!btn) return;
-        
-        // Update click counter
-        document.getElementById('clicks-remaining').innerText = 
-            `Clicks: ${selectionsSoFar.length}/${maxClicks}`;
-        
-        // Visual feedback - show who selected it
-        btn.disabled = true;
-        
-        if(currentRole === "player") {
-            // Players only see that something was selected, not if it's correct
-            // Highlight in blue to show it's been selected by the group
-            btn.classList.add('player-selected');
-            
-            // Add small indicator of who clicked (optional)
-            if(!btn.querySelector('.selector-tag')) {
-                const tag = document.createElement('span');
-                tag.className = 'selector-tag';
-                tag.style.cssText = 'position:absolute; top:5px; right:5px; font-size:0.7rem; background:rgba(255,255,255,0.3); padding:2px 5px; border-radius:3px;';
-                tag.innerText = selector === myUsername ? 'You' : 'Group';
-                btn.appendChild(tag);
-            }
-        } else {
-            // Admin sees if it's correct or not
-            const isCorrect = currentQuestionData.correctIndices.includes(optionIndex);
-            btn.classList.add(isCorrect ? 'admin-correct-reveal' : 'admin-wrong-reveal');
-        }
-        
-        // Check if max clicks reached
-        if(selectionsSoFar.length >= maxClicks && !hasSubmitted) {
-            submitGroupPoints(selectionsSoFar);
-        }
+    // Cleanup on close
+    window.addEventListener('beforeunload', () => {
+        socket.emit('user-leave', { username: myUsername, group: myGroup });
     });
-
-    function submitGroupPoints(selections) {
-        if(hasSubmitted || currentRole === "leader") return;
-        hasSubmitted = true;
-        
-        // Calculate points based on correct selections
-        let correctCount = 0;
-        selections.forEach(idx => {
-            if(currentQuestionData.correctIndices.includes(idx)) {
-                correctCount++;
-            }
-        });
-        
-        const pointsThisRound = correctCount * 10;
-        myScore += pointsThisRound;
-        
-        document.getElementById('p-score-board').innerText = myScore;
-        document.getElementById('status-text').innerText = 
-            `Submitted! Points: ${pointsThisRound}`;
-        document.getElementById('status-text').style.color = "#2ecc71";
-        
-        socket.emit('score-update', { 
-            username: myUsername, 
-            group: myGroup, 
-            score: myScore, 
-            pointsAdded: pointsThisRound 
-        });
-    }
-
-    function handleTimeUp(data) {
-        quizActive = false;
-        stopMusic();
-        
-        if(currentRole === "leader") {
-            // Admin sees correct answers
-            data.correctIndices.forEach(ci => {
-                const el = document.getElementById("opt-"+ci);
-                if(el) el.classList.add('admin-correct-reveal');
-            });
-            
-            // Show wrong answers too
-            document.querySelectorAll('.quiz-opt').forEach((btn, idx) => {
-                if(!data.correctIndices.includes(idx)) {
-                    btn.classList.add('admin-wrong-reveal');
-                }
-                btn.disabled = true;
-            });
-            
-            document.getElementById('close-btn').style.display = 'block';
-            document.getElementById('start-btn').style.display = 'none';
-        } else {
-            // Players don't see correct answers, just that time is up
-            document.getElementById('status-text').innerText = "TIME UP! Waiting for admin...";
-            document.getElementById('status-text').style.color = "#e74c3c";
-            
-            // Disable all buttons
-            document.querySelectorAll('.quiz-opt').forEach(b => b.disabled = true);
-            
-            // Auto close after delay
-            setTimeout(closeQuizOverlay, 3000);
-        }
-        
-        // Submit any remaining points if not submitted
-        if(!hasSubmitted && currentRole === "player") {
-            submitGroupPoints(groupSelections);
-        }
-    }
-
-    socket.on('update-leaderboard', (allGroups) => {
-        const list = document.getElementById('rank-list');
-        list.innerHTML = "";
-        Object.entries(allGroups)
-            .sort((a,b) => b[1]-a[1])
-            .forEach(([name, score]) => {
-                if(!name || name === "undefined" || name === "") return;
-                const div = document.createElement('div');
-                div.className = "rank-item";
-                div.innerHTML = `<span><b>${name}</b></span> <span class="group-pill">${score} PTS</span>`;
-                list.appendChild(div);
-            });
-    });
-
-    socket.on('hide-quiz-overlay', () => {
-        closeQuizOverlay();
-        if(currentRole === "leader") resetQuizUI();
-    });
-
-    // Update group member count
-    socket.on('group-members-update', (count) => {
-        const el = document.getElementById('group-members-count');
-        if(el) el.innerText = `Group Members Online: ${count}`;
-    });
-
-    function toggleZoom(e) { 
-        if(e.target.tagName !== 'BUTTON') 
-            document.getElementById('zoom-container').classList.toggle('zoomed'); 
-    }
-    
-    function showData(t, d) {
-        event.stopPropagation();
-        document.getElementById('mTitle').innerText = t;
-        document.getElementById('mDesc').innerText = d;
-        document.getElementById('modal').classList.add('active');
-        document.getElementById('overlay').style.display = 'block';
-    }
-    
-    function closeModal() {
-        document.getElementById('modal').classList.remove('active');
-        document.getElementById('overlay').style.display = 'none';
-    }
 </script>
 </body>
 </html>
