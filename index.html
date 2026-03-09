@@ -207,42 +207,62 @@
     function toggleRank() { document.getElementById('leaderboard').classList.toggle('minimized'); }
 
     // --- ADMIN LOGIC ---
-    function startNewQuestion() {
-        const allQuizData = [
-    {
-        question: "Which of these are types of energy?",
-        options: ["Kinetic", "Potential", "Chemical", "Electrical"],
-        correctIndices: [0, 1, 2, 3],
-        timer: 15
-    },
-    {
-        question: "Identify the primary colors:",
-        options: ["Red", "Green", "Blue", "Yellow"],
-        correctIndices: [0, 2, 3], // Assuming primary colors in paint/art are Red, Yellow, Blue. If light, it would be Red, Green, Blue.
-        timer: 10
-    },
-    {
-        question: "Select the planets in our solar system:",
-        options: ["Mars", "Jupiter", "Andromeda", "Venus"],
-        correctIndices: [0, 1, 3],
-        timer: 12
-    },
-    {
-        question: "Which of the following are fruits?",
-        options: ["Carrot", "Apple", "Banana", "Potato"],
-        correctIndices: [1, 2],
-        timer: 8
-    },
-    {
-        question: "Choose the even numbers from the list:",
-        options: ["1", "2", "3", "4", "5", "6"],
-        correctIndices: [1, 3, 5],
-        timer: 10
-    }
-];
-        socket.emit('trigger-question', quizData);
+    let currentQuestionIndex = 0; // Initialize a variable to keep track of the current question
+
+function startNewQuestion() {
+    const allQuizData = [
+        {
+            question: "Which of these are types of energy?",
+            options: ["Kinetic", "Potential", "Chemical", "Electrical"],
+            correctIndices: [0, 1, 2, 3],
+            timer: 15
+        },
+        {
+            question: "Identify the primary colors:",
+            options: ["Red", "Green", "Blue", "Yellow"],
+            correctIndices: [0, 2, 3], // Assuming primary colors in paint/art are Red, Yellow, Blue. If light, it would be Red, Green, Blue.
+            timer: 10
+        },
+        {
+            question: "Select the planets in our solar system:",
+            options: ["Mars", "Jupiter", "Andromeda", "Venus"],
+            correctIndices: [0, 1, 3],
+            timer: 12
+        },
+        {
+            question: "Which of the following are fruits?",
+            options: ["Carrot", "Apple", "Banana", "Potato"],
+            correctIndices: [1, 2],
+            timer: 8
+        },
+        {
+            question: "Choose the even numbers from the list:",
+            options: ["1", "2", "3", "4", "5", "6"],
+            correctIndices: [1, 3, 5],
+            timer: 10
+        }
+    ];
+
+    // Check if there are more questions to send
+    if (currentQuestionIndex < allQuizData.length) {
+        const quizDataToSend = allQuizData[currentQuestionIndex];
+        socket.emit('trigger-question', quizDataToSend);
         document.getElementById('start-btn').disabled = true;
+
+        // Optionally, increment the index for the next question
+        // currentQuestionIndex++;
+        // If you want to automatically move to the next question, you'd
+        // need to call startNewQuestion() again after some event (e.g., answer submitted)
+    } else {
+        console.log("No more questions left!");
+        // You might want to display a "quiz finished" message here
     }
+}
+
+// To start the quiz, you would call startNewQuestion()
+// For example, when a button is clicked:
+// document.getElementById('start-btn').addEventListener('click', startNewQuestion);
+
 
     function adminCloseQuiz() {
         socket.emit('close-quiz-manual');
