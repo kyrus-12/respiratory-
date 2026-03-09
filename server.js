@@ -1,17 +1,27 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
+const path = require('path'); // Added for file path handling
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-// Track group states
-const groups = {}; // { groupName: { members: [], selections: [], score: 0 } }
-const groupSelections = {}; // { groupName: { questionIndex: [selectedIndices] } }
+// --- 1. SERVE YOUR FILES (The Fix for "Cannot GET /") ---
+// This tells Express to serve all files in your current folder
+app.use(express.static(__dirname)); 
+
+// This tells Express exactly what to send when someone visits "/"
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// --- 2. SOCKET.IO LOGIC ---
+const groups = {}; 
+const groupSelections = {}; 
 
 io.on('connection', (socket) => {
-    console.log('New client connected');
+    console.log('New client connected: ' + socket.id);
     
     socket.on('user-join', (data) => {
         socket.username = data.username;
@@ -19,18 +29,17 @@ io.on('connection', (socket) => {
         socket.role = data.role;
         
         if(data.role === 'player' && data.group) {
-            // Join socket room for this group
             socket.join(data.group);
             
-            // Initialize group if needed
             if(!groups[data.group]) {
                 groups[data.group] = { members: [], score: 0 };
             }
-            groups[data.group].members.push(data.username);
+            // Avoid duplicate names in the member list
+            if (!groups[data.group].members.includes(data.username)) {
+                groups[data.group].members.push(data.username);
+            }
             
-            // Notify all group members of count
-            io.to(data.group).emit('group-members-update', 
-                groups[data.group].members.length);
+            io.to(data.group).emit('group-members-update', groups[data.group].members.length);
         }
     });
     
@@ -39,27 +48,17 @@ io.on('connection', (socket) => {
         Object.keys(groups).forEach(group => {
             groupSelections[group] = [];
         });
-        
-        // Broadcast to all clients
         io.emit('show-quiz-overlay', quizData);
     });
     
     socket.on('group-selection-attempt', (data) => {
-        const { group, optionIndex, maxClicks, questionIndex } = data;
-        
-        // Initialize if needed
+        const { group, optionIndex, maxClicks } = data;
         if(!groupSelections[group]) groupSelections[group] = [];
-        
-        // Check if already selected
         if(groupSelections[group].includes(optionIndex)) return;
-        
-        // Check if max clicks reached
         if(groupSelections[group].length >= maxClicks) return;
         
-        // Add selection
         groupSelections[group].push(optionIndex);
         
-        // Broadcast to entire group (including sender)
         io.to(group).emit('group-selection-update', {
             optionIndex: optionIndex,
             selectionsSoFar: groupSelections[group],
@@ -73,7 +72,6 @@ io.on('connection', (socket) => {
             groups[data.group].score = data.score;
         }
         
-        // Broadcast updated leaderboard to all
         const leaderboard = {};
         Object.keys(groups).forEach(g => {
             leaderboard[g] = groups[g].score;
@@ -89,8 +87,7 @@ io.on('connection', (socket) => {
         if(data.group && groups[data.group]) {
             groups[data.group].members = groups[data.group].members
                 .filter(m => m !== data.username);
-            io.to(data.group).emit('group-members-update', 
-                groups[data.group].members.length);
+            io.to(data.group).emit('group-members-update', groups[data.group].members.length);
         }
     });
     
@@ -99,6 +96,8 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(3000, () => {
-    console.log('Server running on port 3000');
+// --- 3. START SERVER ---
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
 });
