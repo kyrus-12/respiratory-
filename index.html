@@ -300,55 +300,46 @@ function startNewQuestion() {
     }
 
     // --- SOCKETS ---
-    socket.on('update-leaderboard', (allGroups) => {
-        const list = document.getElementById('rank-list');
-        list.innerHTML = "";
-        
-        // Convert group object to sorted array
-        const sortedGroups = Object.entries(allGroups).sort((a, b) => b[1] - a[1]);
-        
-        sortedGroups.forEach(([groupName, score]) => {
-            if(groupName === "undefined" || groupName === "") return;
-            const div = document.createElement('div');
-            div.className = "rank-item";
-            div.innerHTML = `<span><b>${groupName}</b></span> <span class="group-pill">${score} PTS</span>`;
-            list.appendChild(div);
-        });
-    });
-
     socket.on('show-quiz-overlay', (data) => {
         quizActive = true;
-        hasAnswered = false;
+        
+        // --- NEW MULTI-SELECT STATE ---
+        let clicksUsed = 0;
+        const maxClicks = data.correctIndices.length; 
+        const selectedIndices = []; 
+        // ------------------------------
+
         const overlay = document.getElementById('quiz-overlay');
         const optionsBox = document.getElementById('quiz-options');
         const timerEl = document.getElementById('global-timer');
         
         overlay.style.display = 'flex';
         document.getElementById('question-text').innerText = data.question;
-        document.getElementById('status-text').innerText = "Hurry! Choose correctly!";
+        document.getElementById('status-text').innerText = `Select ${maxClicks} answer(s)!`;
         document.getElementById('status-text').style.color = "#f1c40f";
         optionsBox.innerHTML = "";
         
         let timeLeft = data.timer;
         timerEl.innerText = timeLeft;
 
-        // Create buttons
         data.options.forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = "quiz-opt";
             btn.innerText = opt;
             btn.id = "opt-" + idx;
+            
             btn.onclick = () => {
-                if(currentRole === "leader" || !quizActive || hasAnswered) return;
+                // Prevent clicking if quiz ended, max clicks reached, or button already clicked
+                if(currentRole === "leader" || !quizActive || clicksUsed >= maxClicks || btn.disabled) return;
                 
-                hasAnswered = true;
-                
+                clicksUsed++;
+                btn.disabled = true; // Disable this specific button so it can't be clicked twice
+
                 if(data.correctIndices.includes(idx)) {
-                    // CORRECT ANSWER - Update score immediately
+                    // CORRECT CHOICE
                     myScore += 10;
                     document.getElementById('p-score-board').innerText = myScore;
                     
-                    // EMIT SCORE TO SERVER
                     socket.emit('score-update', { 
                         username: myUsername,
                         group: myGroup, 
@@ -357,21 +348,25 @@ function startNewQuestion() {
                     });
                     
                     btn.classList.add('correct-reveal');
-                    document.getElementById('status-text').innerText = "Correct! +10 points!";
+                    document.getElementById('status-text').innerText = `Nice! (${clicksUsed}/${maxClicks})`;
                     document.getElementById('status-text').style.color = "#2ecc71";
                 } else {
+                    // WRONG CHOICE
                     btn.classList.add('wrong-reveal');
-                    document.getElementById('status-text').innerText = "Wrong answer!";
+                    document.getElementById('status-text').innerText = `Wrong! (${clicksUsed}/${maxClicks})`;
                     document.getElementById('status-text').style.color = "#e74c3c";
                 }
-                
-                // Disable all after one click
-                document.querySelectorAll('.quiz-opt').forEach(b => b.disabled = true);
+
+                // If user has used all their allowed clicks
+                if(clicksUsed === maxClicks) {
+                    document.querySelectorAll('.quiz-opt').forEach(b => b.disabled = true);
+                    document.getElementById('status-text').innerText = "All choices used! Waiting for timer...";
+                }
             };
             optionsBox.appendChild(btn);
         });
 
-        // Timer Logic
+        // Timer Logic (Keep your existing timer logic here)
         currentCountdown = setInterval(() => {
             timeLeft--;
             timerEl.innerText = timeLeft;
@@ -380,23 +375,18 @@ function startNewQuestion() {
                 currentCountdown = null;
                 quizActive = false;
                 
-                // REVEAL ANSWERS
+                // REVEAL ALL CORRECT ANSWERS
                 data.correctIndices.forEach(correctIdx => {
                     const correctBtn = document.getElementById("opt-" + correctIdx);
                     if(correctBtn) correctBtn.classList.add('correct-reveal');
                 });
                 
-                document.getElementById('status-text').innerText = "TIME UP! Closing in 3 seconds...";
-                document.getElementById('status-text').style.color = "#f39c12";
+                document.getElementById('status-text').innerText = "TIME UP!";
                 
-                // AUTO-CLOSE FOR PLAYERS after 3 seconds
                 if(currentRole === "player") {
-                    setTimeout(() => {
-                        closeQuizOverlay(); // Use the close function
-                    }, 3000);
+                    setTimeout(() => { closeQuizOverlay(); }, 3000);
                 }
                 
-                // Show admin close button
                 if(currentRole === "leader") {
                     document.getElementById('close-btn').style.display = 'block';
                     document.getElementById('start-btn').style.display = 'none';
