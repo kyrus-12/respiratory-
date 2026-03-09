@@ -55,18 +55,19 @@
             border-radius: 12px; cursor: pointer; font-size: 1.1rem; 
             transition: 0.3s; position: relative; overflow: hidden;
         }
+        
+        /* Highlight clicked answers Blue */
+        .player-selected { background: #3498db !important; box-shadow: 0 0 15px #3498db; }
+        
         .quiz-opt:hover:not(:disabled) { background: #4a6278; transform: translateY(-2px); }
         .quiz-opt:disabled { cursor: not-allowed; opacity: 0.7; }
-        
-        .player-selected { background: #3498db !important; box-shadow: 0 0 15px #3498db; }
-        .admin-correct-reveal { background: var(--success) !important; box-shadow: 0 0 20px var(--success); }
-        .admin-wrong-reveal { background: #e74c3c !important; }
 
         /* --- LEADERBOARD --- */
         #leaderboard {
             position: absolute; top: 15px; left: 15px; width: 260px;
             background: white; border-radius: 10px; padding: 12px;
             box-shadow: var(--btn-shadow); z-index: 6000; transition: 0.3s;
+            display: none; /* Hidden by default, shown only to Admin */
         }
         #leaderboard.minimized { width: 60px; height: 30px; overflow: hidden; cursor: pointer; background: var(--primary); }
         #leaderboard.minimized .rank-content, #leaderboard.minimized h3 { display: none; }
@@ -118,7 +119,7 @@
     <div class="login-box">
         <h2>AIGHAM Portal</h2>
         <input type="text" id="user-name" placeholder="Full Name">
-        <input type="text" id="group-id" placeholder="Group Name (e.g. Group 6)">
+        <input type="text" id="group-id" placeholder="Group Name">
         <input type="password" id="pass-id" placeholder="Password">
         <button class="trigger-btn" style="width:100%" onclick="login()">Connect</button>
     </div>
@@ -128,7 +129,7 @@
     <h1>Student Dashboard</h1>
     <div id="p-score-board" style="font-size: 4rem; color: var(--success); font-weight: bold;">0</div>
     <p id="group-display" style="font-weight:bold; color:#ecf0f1;"></p>
-    <p>Prepare for the quiz. Watching Leaderboard...</p>
+    <p>Wait for the teacher to start the quiz...</p>
     <div class="group-indicator" id="group-members-count">Waiting for group members...</div>
 </div>
 
@@ -168,7 +169,6 @@
     <span style="float:right; cursor:pointer; color:red; font-size: 1.5rem;" onclick="closeModal()">×</span>
     <h2 id="mTitle"></h2>
     <p id="mDesc"></p>
-    <div id="mediaBox" style="width:100%; height:200px; background:#000; border-radius: 8px;"></div>
 </div>
 
 <script>
@@ -184,7 +184,7 @@
     let hasSubmitted = false;
     let groupSelections = [];
 
-    // --- MUSIC ---
+    // --- MUSIC SYSTEM ---
     let player;
     const playlist = ["9p67S66SshQ", "t6osTfAsv9Y", "jfKfPfyJRdk"]; 
     
@@ -192,14 +192,14 @@
         player = new YT.Player('yt-player', {
             height: '0', width: '0',
             videoId: playlist[0],
-            playerVars: { 'autoplay': 0, 'controls': 0 }
+            events: { 'onReady': (e) => console.log("Music Engine Ready") }
         });
     }
 
     function playRandomMusic() {
         if(player && player.loadVideoById) {
             const randomID = playlist[Math.floor(Math.random() * playlist.length)];
-            player.loadVideoById(randomID);
+            player.loadVideoById({ videoId: randomID });
             player.playVideo();
         }
     }
@@ -219,21 +219,25 @@
             if(pass !== "renz123") return alert("Admin Password Incorrect");
             currentRole = "leader";
             document.getElementById('admin-ui').style.display = 'flex';
+            document.getElementById('leaderboard').style.display = 'block'; // Admin sees ranking
             document.getElementById('main-wrapper').style.display = 'block';
         } else {
             currentRole = "player";
             myGroup = group;
             document.getElementById('group-display').innerText = "GROUP: " + group;
             document.getElementById('waiting-screen').style.display = 'flex';
+            document.getElementById('leaderboard').style.display = 'none'; // Players do NOT see ranking
             document.getElementById('main-wrapper').style.display = 'block';
         }
         myUsername = name;
         document.getElementById('login-screen').style.display = 'none';
-        
         socket.emit('user-join', { username: name, group: group, role: currentRole });
     }
 
-    // --- INTERACTIVE SYSTEM ---
+
+
+[Image of the human respiratory system]
+
 
     function toggleZoom(e) { 
         if(e.target.classList.contains('base-img')) {
@@ -256,18 +260,18 @@
 
     // --- QUIZ LOGIC ---
     const allQuizData = [
-        { question: "Which of these are types of energy?", options: ["Kinetic", "Potential", "Chemical", "Electrical"], correctIndices: [0, 1, 2, 3], timer: 15 },
-        { question: "Identify the primary colors (in Art):", options: ["Red", "Green", "Blue", "Yellow"], correctIndices: [0, 2, 3], timer: 10 }
+        { question: "Which are parts of the Upper Respiratory Tract?", options: ["Nasal Cavity", "Pharynx", "Trachea", "Alveoli"], correctIndices: [0, 1], timer: 15 },
+        { question: "Identify the main muscles used in breathing:", options: ["Diaphragm", "Biceps", "Intercostals", "Heart"], correctIndices: [0, 2], timer: 15 }
     ];
 
     function startNewQuestion() {
         if (currentQuestionIndex < allQuizData.length) {
             socket.emit('trigger-question', allQuizData[currentQuestionIndex]);
             document.getElementById('start-btn').disabled = true;
-            document.getElementById('start-btn').innerText = "IN PROGRESS...";
+            document.getElementById('start-btn').innerText = "QUESTION IN PROGRESS...";
             currentQuestionIndex++; 
         } else {
-            alert("Quiz Complete!");
+            alert("Quiz Session Ended.");
             currentQuestionIndex = 0;
             resetQuizUI();
         }
@@ -298,13 +302,15 @@
         hasSubmitted = false;
         groupSelections = [];
         currentQuestionData = data;
-        if(currentRole === "player") playRandomMusic();
+        
+        // Function Music Trigger
+        playRandomMusic();
         
         const overlay = document.getElementById('quiz-overlay');
         const optionsBox = document.getElementById('quiz-options');
         overlay.style.display = 'flex';
         document.getElementById('question-text').innerText = data.question;
-        document.getElementById('clicks-remaining').innerText = `Clicks: 0/${data.correctIndices.length}`;
+        document.getElementById('clicks-remaining').innerText = `Group Selections: 0/${data.correctIndices.length}`;
         optionsBox.innerHTML = "";
         
         data.options.forEach((opt, idx) => {
@@ -312,7 +318,14 @@
             btn.className = "quiz-opt";
             btn.innerText = opt;
             btn.id = "opt-" + idx;
-            btn.onclick = () => handleOptionClick(idx, btn, data.correctIndices.length);
+            btn.onclick = () => {
+                if(!quizActive || currentRole === "leader" || btn.disabled) return;
+                socket.emit('group-selection-attempt', {
+                    group: myGroup,
+                    optionIndex: idx,
+                    maxClicks: data.correctIndices.length
+                });
+            };
             optionsBox.appendChild(btn);
         });
 
@@ -328,35 +341,27 @@
         }, 1000);
     });
 
-    function handleOptionClick(idx, btn, maxClicks) {
-        if(!quizActive || currentRole === "leader" || btn.disabled) return;
-        socket.emit('group-selection-attempt', {
-            group: myGroup,
-            optionIndex: idx,
-            maxClicks: maxClicks
-        });
-    }
-
     socket.on('group-selection-update', (data) => {
         const btn = document.getElementById("opt-" + data.optionIndex);
         if(!btn) return;
+        
         btn.disabled = true;
-        btn.classList.add('player-selected');
+        btn.classList.add('player-selected'); // Highlight Blue
+        
         groupSelections = data.selectionsSoFar;
-        document.getElementById('clicks-remaining').innerText = `Clicks: ${groupSelections.length}/${data.maxClicks}`;
+        document.getElementById('clicks-remaining').innerText = `Group Selections: ${groupSelections.length}/${data.maxClicks}`;
         
         if(groupSelections.length >= data.maxClicks && !hasSubmitted && currentRole === "player") {
-            submitScore();
+            submitPoints();
         }
     });
 
-    function submitScore() {
+    function submitPoints() {
         hasSubmitted = true;
         let correctCount = groupSelections.filter(idx => currentQuestionData.correctIndices.includes(idx)).length;
-        let points = correctCount * 10;
-        myScore += points;
+        myScore += (correctCount * 10);
         document.getElementById('p-score-board').innerText = myScore;
-        socket.emit('score-update', { username: myUsername, group: myGroup, score: myScore });
+        socket.emit('score-update', { group: myGroup, score: myScore });
     }
 
     function handleTimeUp() {
@@ -365,12 +370,13 @@
         if(currentRole === "leader") {
             document.getElementById('close-btn').style.display = 'block';
         } else if(!hasSubmitted) {
-            submitScore();
+            submitPoints();
         }
         setTimeout(closeQuizOverlay, 3000);
     }
 
     socket.on('update-leaderboard', (leaderboard) => {
+        if(currentRole !== "leader") return; // Safety check
         const list = document.getElementById('rank-list');
         list.innerHTML = "";
         Object.entries(leaderboard).sort((a,b) => b[1]-a[1]).forEach(([name, score]) => {
@@ -387,13 +393,8 @@
         if(el) el.innerText = `Group Members Online: ${count}`;
     });
 
-    function toggleRank() { 
-        document.getElementById('leaderboard').classList.toggle('minimized'); 
-    }
-
-    window.addEventListener('beforeunload', () => {
-        socket.emit('user-leave', { username: myUsername, group: myGroup });
-    });
+    function toggleRank() { document.getElementById('leaderboard').classList.toggle('minimized'); }
+    window.addEventListener('beforeunload', () => socket.emit('user-leave', { username: myUsername, group: myGroup }));
 </script>
 </body>
-</html>
+    </html>
