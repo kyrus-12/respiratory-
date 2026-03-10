@@ -111,7 +111,7 @@
         }
     </style>
 </head>
-<body>
+<body id="main-body">
 
 <div id="yt-player"></div>
 
@@ -119,7 +119,7 @@
     <div class="login-box">
         <h2>AIGHAM Portal</h2>
         <input type="text" id="user-name" placeholder="Full Name">
-        <input type="text" id="group-id" placeholder="Group Name">
+        <input type="text" id="group-id" placeholder="Group Name (Blank for Admin)">
         <input type="password" id="pass-id" placeholder="Password">
         <button class="trigger-btn" style="width:100%" onclick="login()">Connect</button>
     </div>
@@ -129,7 +129,7 @@
     <h1>Student Dashboard</h1>
     <div id="p-score-board" style="font-size: 4rem; color: var(--success); font-weight: bold;">0</div>
     <p id="group-display" style="font-weight:bold; color:#ecf0f1;"></p>
-    <p>Get ready for the quiz...</p>
+    <p>System: Locked in Full Screen</p>
     <div class="group-indicator" id="group-members-count">Waiting for group members...</div>
 </div>
 
@@ -173,6 +173,9 @@
 
 
 
+[Image of the human respiratory system]
+
+
 <script>
     const socket = io();
     let currentRole = "player";
@@ -186,16 +189,43 @@
     let hasSubmitted = false;
     let groupSelections = [];
 
-    // --- MUSIC SYSTEM (Only use IDs here) ---
+    // --- FULLSCREEN LOGIC ---
+    function enterFullScreen() {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) elem.requestFullscreen();
+        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+        else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+    }
+
+    function exitFullScreen() {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.msExitFullscreen) document.msExitFullscreen();
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key.toLowerCase() === 'f') enterFullScreen();
+        if (e.key.toLowerCase() === 'e') exitFullScreen();
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+        // Only force back if user is a player and main section (waiting/quiz) is visible
+        if (!document.fullscreenElement && currentRole === "player" && myUsername !== "") {
+            alert("Fullscreen exit detected! Re-entering...");
+            enterFullScreen();
+        }
+    });
+
+    // --- MUSIC SYSTEM ---
     let player;
-    const playlist = ["UaRrDZWhtWA", "UaRrDZWhtWA", "UaRrDZWhtWA"]; 
+    const playlist = ["UaRrDZWhtWA", "9p67S66SshQ", "t6osTfAsv9Y"]; 
     
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('yt-player', {
             height: '0', width: '0',
             videoId: playlist[0],
             playerVars: { 'autoplay': 0, 'controls': 0 },
-            events: { 'onReady': () => console.log("Music Engine Ready") }
+            events: { 'onReady': () => console.log("Engine Active") }
         });
     }
 
@@ -214,7 +244,9 @@
         const name = document.getElementById('user-name').value;
         const group = document.getElementById('group-id').value;
         const pass = document.getElementById('pass-id').value;
-        if(!name || !pass) return alert("Fill Name and Password");
+        if(!name || !pass) return alert("Please fill credentials");
+
+        enterFullScreen();
 
         if(group.trim() === "") {
             if(pass !== "renz123") return alert("Admin Password Incorrect");
@@ -254,10 +286,10 @@
         document.getElementById('overlay').style.display = 'none';
     }
 
-    // --- QUIZ LOGIC ---
+    // --- QUIZ SYSTEM ---
     const allQuizData = [
-        { question: "Which are parts of the Upper Respiratory Tract?", options: ["Nasal Cavity", "Pharynx", "Trachea", "Alveoli"], correctIndices: [0, 1], timer: 15 },
-        { question: "Identify the main muscles used in breathing:", options: ["Diaphragm", "Biceps", "Intercostals", "Heart"], correctIndices: [0, 2], timer: 15 }
+        { question: "Which are parts of the Upper Respiratory Tract?", options: ["Nasal Cavity", "Pharynx", "Trachea", "Alveoli"], correctIndices: [0, 1], timer: 120 },
+        { question: "Identify the main muscles used in breathing:", options: ["Diaphragm", "Biceps", "Intercostals", "Heart"], correctIndices: [0, 2], timer: 120 }
     ];
 
     function startNewQuestion() {
@@ -298,20 +330,16 @@
         hasSubmitted = false;
         groupSelections = [];
         
-        // --- RANDOMIZATION LOGIC ---
         let items = data.options.map((opt, i) => ({ text: opt, originalIdx: i }));
         for (let i = items.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [items[i], items[j]] = [items[j], items[i]];
         }
-
         const newCorrectIndices = [];
         items.forEach((item, newIdx) => {
             if (data.correctIndices.includes(item.originalIdx)) newCorrectIndices.push(newIdx);
         });
-
         currentQuestionData = { ...data, options: items.map(i => i.text), correctIndices: newCorrectIndices };
-        // --- END RANDOMIZATION ---
 
         playRandomMusic();
         
@@ -319,7 +347,7 @@
         const optionsBox = document.getElementById('quiz-options');
         overlay.style.display = 'flex';
         document.getElementById('question-text').innerText = data.question;
-        document.getElementById('status-text').innerText = "Pick the correct answers!";
+        document.getElementById('status-text').innerText = "Select carefully!";
         document.getElementById('clicks-remaining').innerText = `Selections: 0/${data.correctIndices.length}`;
         optionsBox.innerHTML = "";
         
@@ -359,7 +387,17 @@
         }
         groupSelections = data.selectionsSoFar;
         document.getElementById('clicks-remaining').innerText = `Selections: ${groupSelections.length}/${data.maxClicks}`;
-        if(groupSelections.length >= data.maxClicks && !hasSubmitted && currentRole === "player") submitPoints();
+        
+        // --- AUTO FAST FORWARD LOGIC ---
+        if(groupSelections.length >= data.maxClicks) {
+            if(!hasSubmitted && currentRole === "player") submitPoints();
+            
+            // Immediately clear timer and trigger checking
+            if(currentCountdown) {
+                clearInterval(currentCountdown);
+                handleTimeUp();
+            }
+        }
     });
 
     function submitPoints() {
@@ -373,17 +411,13 @@
     function handleTimeUp() {
         quizActive = false;
         stopMusic();
-        
         currentQuestionData.correctIndices.forEach(idx => {
             const btn = document.getElementById("opt-" + idx);
             if(btn) btn.classList.add('correct-answer');
         });
-
-        document.getElementById('status-text').innerText = "Time's up! Check the correct answers.";
-
+        document.getElementById('status-text').innerText = "All selections completed!";
         if(currentRole === "player") {
-            if(!hasSubmitted) submitPoints();
-            setTimeout(closeQuizOverlay, 3000);
+            setTimeout(closeQuizOverlay, 4000);
         } else {
             document.getElementById('close-btn').style.display = 'block';
         }
