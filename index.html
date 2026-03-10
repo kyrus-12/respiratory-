@@ -129,17 +129,17 @@
     <h1>Student Dashboard</h1>
     <div id="p-score-board" style="font-size: 4rem; color: var(--success); font-weight: bold;">0</div>
     <p id="group-display" style="font-weight:bold; color:#ecf0f1;"></p>
-    <p>System: Locked in Full Screen</p>
+    <p>🛡️ Secure Fullscreen Mode Active</p>
     <div class="group-indicator" id="group-members-count">Waiting for group members...</div>
 </div>
 
 <div id="quiz-overlay">
     <button id="leader-close-x" class="quiz-close-btn" onclick="closeQuizOverlay()">×</button>
     <div class="click-counter" id="clicks-remaining">Selections: 0/0</div>
-    <div class="quiz-timer" id="global-timer">10</div>
+    <div class="quiz-timer" id="global-timer">120</div>
     <h2 id="question-text" style="text-align:center;">Question</h2>
     <div class="quiz-options" id="quiz-options"></div>
-    <p id="status-text" style="margin-top:20px; color:#f1c40f;">Hurry!</p>
+    <p id="status-text" style="margin-top:20px; color:#f1c40f;">Select carefully!</p>
 </div>
 
 <div class="overlay" id="overlay" onclick="closeModal()"></div>
@@ -172,6 +172,10 @@
 </div>
 
 
+
+[Image of the human respiratory system]
+
+
 <script>
     const socket = io();
     let currentRole = "player";
@@ -185,31 +189,28 @@
     let hasSubmitted = false;
     let groupSelections = [];
 
-    // --- FULLSCREEN LOGIC ---
+    // --- ENHANCED FULLSCREEN LOCK ---
     function enterFullScreen() {
         const elem = document.documentElement;
         if (elem.requestFullscreen) elem.requestFullscreen();
         else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-        else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
     }
-
-    function exitFullScreen() {
-        if (document.exitFullscreen) document.exitFullscreen();
-        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-        else if (document.msExitFullscreen) document.msExitFullscreen();
-    }
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key.toLowerCase() === 'f') enterFullScreen();
-        if (e.key.toLowerCase() === 'e') exitFullScreen();
-    });
 
     document.addEventListener('fullscreenchange', () => {
-        // Only force back if user is a player and main section (waiting/quiz) is visible
         if (!document.fullscreenElement && currentRole === "player" && myUsername !== "") {
-            alert("Fullscreen exit detected! Re-entering...");
+            // Immediate re-entry attempt
             enterFullScreen();
+            // Fallback alert to force interaction
+            setTimeout(() => {
+                if(!document.fullscreenElement) alert("SECURITY: Fullscreen is required to continue!");
+            }, 500);
         }
+    });
+
+    // Keys: F to enter, E to exit
+    document.addEventListener('keydown', (e) => {
+        if (e.key.toLowerCase() === 'f') enterFullScreen();
+        if (e.key.toLowerCase() === 'e' && currentRole === "leader") document.exitFullscreen();
     });
 
     // --- MUSIC SYSTEM ---
@@ -218,10 +219,9 @@
     
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('yt-player', {
-            height: '0', width: '0',
-            videoId: playlist[0],
+            height: '0', width: '0', videoId: playlist[0],
             playerVars: { 'autoplay': 0, 'controls': 0 },
-            events: { 'onReady': () => console.log("Engine Active") }
+            events: { 'onReady': () => console.log("Audio Ready") }
         });
     }
 
@@ -232,7 +232,6 @@
             player.playVideo();
         }
     }
-
     function stopMusic() { if(player && player.stopVideo) player.stopVideo(); }
 
     // --- LOGIN ---
@@ -240,7 +239,7 @@
         const name = document.getElementById('user-name').value;
         const group = document.getElementById('group-id').value;
         const pass = document.getElementById('pass-id').value;
-        if(!name || !pass) return alert("Please fill credentials");
+        if(!name || !pass) return alert("Fill Name and Password");
 
         enterFullScreen();
 
@@ -255,7 +254,6 @@
             myGroup = group;
             document.getElementById('group-display').innerText = "GROUP: " + group;
             document.getElementById('waiting-screen').style.display = 'flex';
-            document.getElementById('leader-close-x').style.display = 'none';
         }
         myUsername = name;
         document.getElementById('login-screen').style.display = 'none';
@@ -263,12 +261,7 @@
         socket.emit('user-join', { username: name, group: group, role: currentRole });
     }
 
-    function toggleZoom(e) { 
-        if(e.target.classList.contains('base-img')) {
-            document.getElementById('zoom-container').classList.toggle('zoomed'); 
-        }
-    }
-
+    function toggleZoom(e) { if(e.target.classList.contains('base-img')) document.getElementById('zoom-container').classList.toggle('zoomed'); }
     function showData(e, title, desc) {
         if(e) e.stopPropagation(); 
         document.getElementById('mTitle').innerText = title;
@@ -276,13 +269,12 @@
         document.getElementById('modal').classList.add('active');
         document.getElementById('overlay').style.display = 'block';
     }
-
     function closeModal() {
         document.getElementById('modal').classList.remove('active');
         document.getElementById('overlay').style.display = 'none';
     }
 
-    // --- QUIZ SYSTEM ---
+    // --- QUIZ LOGIC ---
     const allQuizData = [
         { question: "Which are parts of the Upper Respiratory Tract?", options: ["Nasal Cavity", "Pharynx", "Trachea", "Alveoli"], correctIndices: [0, 1], timer: 120 },
         { question: "Identify the main muscles used in breathing:", options: ["Diaphragm", "Biceps", "Intercostals", "Heart"], correctIndices: [0, 2], timer: 120 }
@@ -338,15 +330,13 @@
         currentQuestionData = { ...data, options: items.map(i => i.text), correctIndices: newCorrectIndices };
 
         playRandomMusic();
-        
-        const overlay = document.getElementById('quiz-overlay');
-        const optionsBox = document.getElementById('quiz-options');
-        overlay.style.display = 'flex';
+        document.getElementById('quiz-overlay').style.display = 'flex';
         document.getElementById('question-text').innerText = data.question;
-        document.getElementById('status-text').innerText = "Select carefully!";
+        document.getElementById('status-text').innerText = "Pick the correct answers!";
         document.getElementById('clicks-remaining').innerText = `Selections: 0/${data.correctIndices.length}`;
-        optionsBox.innerHTML = "";
         
+        const optionsBox = document.getElementById('quiz-options');
+        optionsBox.innerHTML = "";
         currentQuestionData.options.forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = "quiz-opt";
@@ -384,16 +374,17 @@
         groupSelections = data.selectionsSoFar;
         document.getElementById('clicks-remaining').innerText = `Selections: ${groupSelections.length}/${data.maxClicks}`;
         
-        // --- AUTO FAST FORWARD LOGIC ---
+        // --- GLOBAL SYNC FAST FORWARD ---
         if(groupSelections.length >= data.maxClicks) {
-            if(!hasSubmitted && currentRole === "player") submitPoints();
-            
-            // Immediately clear timer and trigger checking
-            if(currentCountdown) {
-                clearInterval(currentCountdown);
-                handleTimeUp();
-            }
+            // Tell everyone to stop the timer now
+            socket.emit('force-finish-timer');
         }
+    });
+
+    // This receiver ensures everyone's screen stops at the same time
+    socket.on('global-force-finish', () => {
+        if(currentCountdown) clearInterval(currentCountdown);
+        handleTimeUp();
     });
 
     function submitPoints() {
@@ -405,14 +396,16 @@
     }
 
     function handleTimeUp() {
+        if(!quizActive) return; // Prevent double trigger
         quizActive = false;
         stopMusic();
         currentQuestionData.correctIndices.forEach(idx => {
             const btn = document.getElementById("opt-" + idx);
             if(btn) btn.classList.add('correct-answer');
         });
-        document.getElementById('status-text').innerText = "All selections completed!";
+        document.getElementById('status-text').innerText = "Checking Answers...";
         if(currentRole === "player") {
+            if(!hasSubmitted) submitPoints();
             setTimeout(closeQuizOverlay, 4000);
         } else {
             document.getElementById('close-btn').style.display = 'block';
