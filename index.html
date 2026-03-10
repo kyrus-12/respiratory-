@@ -47,7 +47,7 @@
             position: absolute; top: 20px; right: 30px;
             background: transparent; border: none; color: white;
             font-size: 2.5rem; cursor: pointer; z-index: 5001; transition: 0.3s;
-            display: none; /* Only visible to Leader */
+            display: none;
         }
         .quiz-timer { font-size: 4rem; font-weight: 900; color: var(--accent); margin-bottom: 10px; }
         .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 80%; max-width: 600px; margin-top: 20px; }
@@ -104,6 +104,11 @@
             background: rgba(255,255,255,0.1); padding: 10px 20px;
             border-radius: 10px; font-size: 1.2rem;
         }
+        .group-indicator {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 20px;
+            font-size: 0.9rem; color: #ecf0f1;
+        }
     </style>
 </head>
 <body>
@@ -125,12 +130,12 @@
     <div id="p-score-board" style="font-size: 4rem; color: var(--success); font-weight: bold;">0</div>
     <p id="group-display" style="font-weight:bold; color:#ecf0f1;"></p>
     <p>Get ready for the quiz...</p>
-    <div class="group-indicator" id="group-members-count" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);">Waiting for group members...</div>
+    <div class="group-indicator" id="group-members-count">Waiting for group members...</div>
 </div>
 
 <div id="quiz-overlay">
     <button id="leader-close-x" class="quiz-close-btn" onclick="closeQuizOverlay()">×</button>
-    <div class="click-counter" id="clicks-remaining">Clicks: 0/0</div>
+    <div class="click-counter" id="clicks-remaining">Selections: 0/0</div>
     <div class="quiz-timer" id="global-timer">10</div>
     <h2 id="question-text" style="text-align:center;">Question</h2>
     <div class="quiz-options" id="quiz-options"></div>
@@ -166,6 +171,8 @@
     <p id="mDesc"></p>
 </div>
 
+
+
 <script>
     const socket = io();
     let currentRole = "player";
@@ -179,7 +186,7 @@
     let hasSubmitted = false;
     let groupSelections = [];
 
-    // --- MUSIC SYSTEM ---
+    // --- MUSIC SYSTEM (Only use IDs here) ---
     let player;
     const playlist = ["UaRrDZWhtWA", "UaRrDZWhtWA", "UaRrDZWhtWA"]; 
     
@@ -187,14 +194,15 @@
         player = new YT.Player('yt-player', {
             height: '0', width: '0',
             videoId: playlist[0],
-            events: { 'onReady': (e) => console.log("Music Ready") }
+            playerVars: { 'autoplay': 0, 'controls': 0 },
+            events: { 'onReady': () => console.log("Music Engine Ready") }
         });
     }
 
     function playRandomMusic() {
         if(player && player.loadVideoById) {
             const randomID = playlist[Math.floor(Math.random() * playlist.length)];
-            player.loadVideoById({ videoId: randomID });
+            player.loadVideoById(randomID);
             player.playVideo();
         }
     }
@@ -206,10 +214,10 @@
         const name = document.getElementById('user-name').value;
         const group = document.getElementById('group-id').value;
         const pass = document.getElementById('pass-id').value;
-        if(!name || !pass) return alert("Missing Info");
+        if(!name || !pass) return alert("Fill Name and Password");
 
         if(group.trim() === "") {
-            if(pass !== "renz123") return alert("Wrong Password");
+            if(pass !== "renz123") return alert("Admin Password Incorrect");
             currentRole = "leader";
             document.getElementById('admin-ui').style.display = 'flex';
             document.getElementById('leaderboard').style.display = 'block';
@@ -226,7 +234,6 @@
         document.getElementById('main-wrapper').style.display = 'block';
         socket.emit('user-join', { username: name, group: group, role: currentRole });
     }
-
 
     function toggleZoom(e) { 
         if(e.target.classList.contains('base-img')) {
@@ -290,18 +297,33 @@
         quizActive = true;
         hasSubmitted = false;
         groupSelections = [];
-        currentQuestionData = data;
+        
+        // --- RANDOMIZATION LOGIC ---
+        let items = data.options.map((opt, i) => ({ text: opt, originalIdx: i }));
+        for (let i = items.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [items[i], items[j]] = [items[j], items[i]];
+        }
+
+        const newCorrectIndices = [];
+        items.forEach((item, newIdx) => {
+            if (data.correctIndices.includes(item.originalIdx)) newCorrectIndices.push(newIdx);
+        });
+
+        currentQuestionData = { ...data, options: items.map(i => i.text), correctIndices: newCorrectIndices };
+        // --- END RANDOMIZATION ---
+
         playRandomMusic();
         
         const overlay = document.getElementById('quiz-overlay');
         const optionsBox = document.getElementById('quiz-options');
         overlay.style.display = 'flex';
         document.getElementById('question-text').innerText = data.question;
-        document.getElementById('status-text').innerText = "Select your answers!";
+        document.getElementById('status-text').innerText = "Pick the correct answers!";
         document.getElementById('clicks-remaining').innerText = `Selections: 0/${data.correctIndices.length}`;
         optionsBox.innerHTML = "";
         
-        data.options.forEach((opt, idx) => {
+        currentQuestionData.options.forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = "quiz-opt";
             btn.innerText = opt;
@@ -352,20 +374,17 @@
         quizActive = false;
         stopMusic();
         
-        // Reveal Answers (Turn Green)
         currentQuestionData.correctIndices.forEach(idx => {
             const btn = document.getElementById("opt-" + idx);
             if(btn) btn.classList.add('correct-answer');
         });
 
-        document.getElementById('status-text').innerText = "Time's up! Correct answers revealed.";
+        document.getElementById('status-text').innerText = "Time's up! Check the correct answers.";
 
         if(currentRole === "player") {
             if(!hasSubmitted) submitPoints();
-            // Automatic close for players
             setTimeout(closeQuizOverlay, 3000);
         } else {
-            // Leader stays open to show answers
             document.getElementById('close-btn').style.display = 'block';
         }
     }
