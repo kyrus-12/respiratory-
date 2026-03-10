@@ -129,7 +129,7 @@
     <h1>Student Dashboard</h1>
     <div id="p-score-board" style="font-size: 4rem; color: var(--success); font-weight: bold;">0</div>
     <p id="group-display" style="font-weight:bold; color:#ecf0f1;"></p>
-    <p>🛡️ Secure Fullscreen Mode Active</p>
+    <p>System: Locked in Full Screen</p>
     <div class="group-indicator" id="group-members-count">Waiting for group members...</div>
 </div>
 
@@ -139,7 +139,7 @@
     <div class="quiz-timer" id="global-timer">120</div>
     <h2 id="question-text" style="text-align:center;">Question</h2>
     <div class="quiz-options" id="quiz-options"></div>
-    <p id="status-text" style="margin-top:20px; color:#f1c40f;">Select carefully!</p>
+    <p id="status-text" style="margin-top:20px; color:#f1c40f;">Hurry!</p>
 </div>
 
 <div class="overlay" id="overlay" onclick="closeModal()"></div>
@@ -171,8 +171,6 @@
     <p id="mDesc"></p>
 </div>
 
-
-
 <script>
     const socket = io();
     let currentRole = "player";
@@ -186,39 +184,43 @@
     let hasSubmitted = false;
     let groupSelections = [];
 
-    // --- ENHANCED FULLSCREEN LOCK ---
+    // --- REPEAT FULLSCREEN ENFORCER ---
     function enterFullScreen() {
         const elem = document.documentElement;
         if (elem.requestFullscreen) elem.requestFullscreen();
         else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+        else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
     }
 
-    document.addEventListener('fullscreenchange', () => {
+    function forceFullscreenMode() {
         if (!document.fullscreenElement && currentRole === "player" && myUsername !== "") {
-            // Immediate re-entry attempt
             enterFullScreen();
-            // Fallback alert to force interaction
-            setTimeout(() => {
-                if(!document.fullscreenElement) alert("SECURITY: Fullscreen is required to continue!");
-            }, 500);
+            // Using alert to block until they interact, then re-trigger
+            alert("Fullscreen exit detected! Re-entering system...");
+            setTimeout(forceFullscreenMode, 1000); 
         }
-    });
+    }
 
-    // Keys: F to enter, E to exit
+    document.addEventListener('fullscreenchange', forceFullscreenMode);
+    
+    // Keybinds: F to enter manually, E to exit (only if leader)
     document.addEventListener('keydown', (e) => {
         if (e.key.toLowerCase() === 'f') enterFullScreen();
-        if (e.key.toLowerCase() === 'e' && currentRole === "leader") document.exitFullscreen();
+        if (e.key.toLowerCase() === 'e' && currentRole === "leader") {
+            if (document.exitFullscreen) document.exitFullscreen();
+        }
     });
 
     // --- MUSIC SYSTEM ---
     let player;
-    const playlist = ["UaRrDZWhtWA", "9p67S66SshQ", "t6osTfAsv9Y"]; 
+    const playlist = ["UaRrDZWhtWA", "UaRrDZWhtWA", "UaRrDZWhtWA"]; 
     
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('yt-player', {
-            height: '0', width: '0', videoId: playlist[0],
+            height: '0', width: '0',
+            videoId: playlist[0],
             playerVars: { 'autoplay': 0, 'controls': 0 },
-            events: { 'onReady': () => console.log("Audio Ready") }
+            events: { 'onReady': () => console.log("Engine Active") }
         });
     }
 
@@ -229,6 +231,7 @@
             player.playVideo();
         }
     }
+
     function stopMusic() { if(player && player.stopVideo) player.stopVideo(); }
 
     // --- LOGIN ---
@@ -236,7 +239,7 @@
         const name = document.getElementById('user-name').value;
         const group = document.getElementById('group-id').value;
         const pass = document.getElementById('pass-id').value;
-        if(!name || !pass) return alert("Fill Name and Password");
+        if(!name || !pass) return alert("Please fill credentials");
 
         enterFullScreen();
 
@@ -251,6 +254,7 @@
             myGroup = group;
             document.getElementById('group-display').innerText = "GROUP: " + group;
             document.getElementById('waiting-screen').style.display = 'flex';
+            document.getElementById('leader-close-x').style.display = 'none';
         }
         myUsername = name;
         document.getElementById('login-screen').style.display = 'none';
@@ -258,7 +262,12 @@
         socket.emit('user-join', { username: name, group: group, role: currentRole });
     }
 
-    function toggleZoom(e) { if(e.target.classList.contains('base-img')) document.getElementById('zoom-container').classList.toggle('zoomed'); }
+    function toggleZoom(e) { 
+        if(e.target.classList.contains('base-img')) {
+            document.getElementById('zoom-container').classList.toggle('zoomed'); 
+        }
+    }
+
     function showData(e, title, desc) {
         if(e) e.stopPropagation(); 
         document.getElementById('mTitle').innerText = title;
@@ -266,12 +275,13 @@
         document.getElementById('modal').classList.add('active');
         document.getElementById('overlay').style.display = 'block';
     }
+
     function closeModal() {
         document.getElementById('modal').classList.remove('active');
         document.getElementById('overlay').style.display = 'none';
     }
 
-    // --- QUIZ LOGIC ---
+    // --- QUIZ SYSTEM ---
     const allQuizData = [
         { question: "Which are parts of the Upper Respiratory Tract?", options: ["Nasal Cavity", "Pharynx", "Trachea", "Alveoli"], correctIndices: [0, 1], timer: 120 },
         { question: "Identify the main muscles used in breathing:", options: ["Diaphragm", "Biceps", "Intercostals", "Heart"], correctIndices: [0, 2], timer: 120 }
@@ -329,7 +339,7 @@
         playRandomMusic();
         document.getElementById('quiz-overlay').style.display = 'flex';
         document.getElementById('question-text').innerText = data.question;
-        document.getElementById('status-text').innerText = "Pick the correct answers!";
+        document.getElementById('status-text').innerText = "Select carefully!";
         document.getElementById('clicks-remaining').innerText = `Selections: 0/${data.correctIndices.length}`;
         
         const optionsBox = document.getElementById('quiz-options');
@@ -371,17 +381,19 @@
         groupSelections = data.selectionsSoFar;
         document.getElementById('clicks-remaining').innerText = `Selections: ${groupSelections.length}/${data.maxClicks}`;
         
-        // --- GLOBAL SYNC FAST FORWARD ---
+        // --- SYNCED STOP TRIGGER ---
         if(groupSelections.length >= data.maxClicks) {
-            // Tell everyone to stop the timer now
-            socket.emit('force-finish-timer');
+            // Send signal to server to tell everyone to stop clocks
+            socket.emit('trigger-global-stop');
         }
     });
 
-    // This receiver ensures everyone's screen stops at the same time
-    socket.on('global-force-finish', () => {
-        if(currentCountdown) clearInterval(currentCountdown);
-        handleTimeUp();
+    // Receiver for the global stop command
+    socket.on('receive-global-stop', () => {
+        if (currentCountdown) {
+            clearInterval(currentCountdown);
+            handleTimeUp();
+        }
     });
 
     function submitPoints() {
@@ -400,7 +412,8 @@
             const btn = document.getElementById("opt-" + idx);
             if(btn) btn.classList.add('correct-answer');
         });
-        document.getElementById('status-text').innerText = "Checking Answers...";
+        document.getElementById('status-text').innerText = "Answer checking complete!";
+        
         if(currentRole === "player") {
             if(!hasSubmitted) submitPoints();
             setTimeout(closeQuizOverlay, 4000);
