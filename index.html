@@ -37,6 +37,25 @@
             display: none; flex-direction: column; justify-content: center; align-items: center;
         }
 
+        /* --- FULLSCREEN BUTTON --- */
+        .fullscreen-btn {
+            margin-top: 20px;
+            padding: 15px 30px;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+            transition: all 0.3s;
+        }
+        .fullscreen-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(46, 204, 113, 0.6);
+        }
+
         /* --- QUIZ SYSTEM --- */
         #quiz-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -200,7 +219,8 @@
     <h1>Student Dashboard</h1>
     <div id="p-score-board" style="font-size: 4rem; color: var(--success); font-weight: bold;">0</div>
     <p id="group-display" style="font-weight:bold; color:#ecf0f1;"></p>
-    <p>System: Locked in Full Screen</p>
+    <p>System: Waiting for Quiz...</p>
+    <button class="fullscreen-btn" onclick="enterFullScreen()">⛶ Enter Fullscreen</button>
     <div class="group-indicator" id="group-members-count">Waiting...</div>
 </div>
 
@@ -305,7 +325,7 @@
     let groupSelections = [];
     let player;
 
-    // --- FULLSCREEN ENFORCER ---
+    // --- FULLSCREEN FUNCTIONS ---
     function enterFullScreen() {
         const elem = document.documentElement;
         if (elem.requestFullscreen) elem.requestFullscreen();
@@ -313,11 +333,11 @@
         else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
     }
 
+    // Removed the annoying alert notification loop
     function forceFullscreenMode() {
         if (!document.fullscreenElement && currentRole === "player" && myUsername !== "") {
             enterFullScreen();
-            alert("Fullscreen exit detected! Re-entering system...");
-            setTimeout(forceFullscreenMode, 1000); 
+            // Silent re-entry without alert
         }
     }
 
