@@ -313,7 +313,7 @@
         <button class="title-btn" onclick="showData('Respiratory System', 'The system responsible for taking in oxygen and expelling carbon dioxide.', 'video')">RESPIRATORY SYSTEM</button>
 
         <!-- Left Side Buttons -->
-        <button class="cover-btn" style="top: 18%; left: 8%; border-color: #ff4757; width: 160px;" onclick="showData('Nasal Cavity', 'Warms, moistens, and filters air.')">Nasal Cavity</button>
+        <button class="cover-btn" style="top: 18%; left: 8%; border-color: #ff4757; width: 160px;" onclick="showData('Nasal Cavity', 'Warms, moistens, and filters air.', 'video')">Nasal Cavity</button>
         <button class="cover-btn" style="top: 27%; left: 5%; border-color: #2ed573;" onclick="showData('Nostril', 'Entrance for air into the nasal passage.', 'text')">Nostril</button>
         <button class="cover-btn" style="top: 36%; left: 5%; border-color: #1e90ff;" onclick="showData('Soft Palate', 'Closes nasal passages during swallowing.', 'image')">Soft Palate</button>
         <button class="cover-btn" style="top: 42%; left: 5%; border-color: #ffa502;" onclick="showData('Hard Palate', 'Bony structure dividing nose and mouth.', 'text')">Hard Palate</button>
@@ -488,18 +488,32 @@
         }
     }
 
+    // FIXED: Properly handle all content types - only show what's provided
     function showData(title, desc, type) {
         event.stopPropagation();
-        document.getElementById('mTitle').innerText = title;
-        document.getElementById('mDesc').innerText = desc;
+        
+        const mTitle = document.getElementById('mTitle');
+        const mDesc = document.getElementById('mDesc');
         const mediaBox = document.getElementById('mediaBox');
         
-        if(type === 'video') {
+        // Always show title and description
+        mTitle.innerText = title;
+        mDesc.innerText = desc || '';
+        mDesc.style.display = desc ? 'block' : 'none';
+        
+        // Clear previous media content
+        mediaBox.innerHTML = '';
+        
+        // Only show media if type is specified
+        if (type === 'video') {
             mediaBox.innerHTML = '<iframe width="100%" height="100%" src="https://www.youtube.com/embed/mOKmjYwfDGU" frameborder="0" allowfullscreen></iframe>';
-        } else if(type === 'image') {
-            mediaBox.innerHTML = '<img src="https://picsum.photos/seed/'+title+'/400/300" style="width:100%; height:100%; object-fit:cover;">';
+            mediaBox.style.display = 'block';
+        } else if (type === 'image') {
+            mediaBox.innerHTML = '<img src="https://picsum.photos/seed/' + title + '/400/300" style="width:100%; height:100%; object-fit:cover;">';
+            mediaBox.style.display = 'block';
         } else {
-            mediaBox.innerHTML = '<div style="padding:20px; color:white; text-align:center; background:#34495e; height:100%; box-sizing:border-box; display:flex; align-items:center; justify-content:center; border-radius:12px; font-size:2rem;">Information for ' + title + ' is being displayed.</div>';
+            // No media for text-only content
+            mediaBox.style.display = 'none';
         }
 
         document.getElementById('modal').classList.add('active');
