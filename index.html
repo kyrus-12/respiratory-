@@ -209,7 +209,7 @@
     <div class="login-box">
         <h2>Respiratory System Portal</h2>
         <input type="text" id="user-name" placeholder="Full Name">
-        <input type="text" id="group-id" placeholder="Group Name (Blank for Admin)">
+        <input type="text" id="group-id" placeholder="Group Name">
         <input type="password" id="pass-id" placeholder="Password">
         <button class="trigger-btn" style="width:100%" onclick="login()">Connect</button>
     </div>
@@ -458,7 +458,7 @@
         document.getElementById('close-btn').style.display = 'none';
         document.getElementById('start-btn').style.display = 'block';
         document.getElementById('start-btn').disabled = false;
-        document.getElementById('start-btn').innerText = "🚀 START NEXT QUESTION";
+        document.getElementById('start-btn').innerText = "START NEXT QUESTION";
         closeQuizOverlay();
     }
 
