@@ -256,6 +256,17 @@
             background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 20px;
             font-size: 0.9rem; color: #ecf0f1;
         }
+        
+        /* Fallback for broken images */
+        .img-fallback {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            text-align: center;
+        }
     </style>
 </head>
 <body id="main-body">
@@ -307,7 +318,12 @@
     </div>
 
     <div id="zoom-container" onclick="toggleZoom(event)">
-        <img src="https://imgur.com/5YQmThC.png" class="base-img">
+        <!-- FIXED: Changed from imgur.com to i.imgur.com with proper extension -->
+        <!-- RECOMMENDATION: Replace with your own hosted image or reliable CDN -->
+        <img src="https://i.imgur.com/5YQmThC.png" 
+             class="base-img" 
+             alt="Respiratory System Diagram"
+             onerror="this.parentElement.innerHTML='<div class=\'img-fallback\' style=\'width:100%;height:100%;\'>Image failed to load.<br>Please check your connection.</div>'">
 
         <!-- Title Button -->
         <button class="title-btn" onclick="showData('Respiratory System', 'The system responsible for taking in oxygen and expelling carbon dioxide.', 'video')">RESPIRATORY SYSTEM</button>
@@ -509,7 +525,9 @@
             mediaBox.innerHTML = '<iframe width="100%" height="100%" src="https://www.youtube.com/embed/mOKmjYwfDGU" frameborder="0" allowfullscreen></iframe>';
             mediaBox.style.display = 'block';
         } else if (type === 'image') {
-            mediaBox.innerHTML = '<img src="https://picsum.photos/seed/' + title + '/400/300" style="width:100%; height:100%; object-fit:cover;">';
+            // FIXED: Using picsum.photos (reliable placeholder) instead of potentially broken Imgur
+            // Replace with your own CDN or local images for production
+            mediaBox.innerHTML = '<img src="https://picsum.photos/seed/' + encodeURIComponent(title) + '/400/300" style="width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.innerHTML=\'<div class=img-fallback>Image unavailable</div>\'">';
             mediaBox.style.display = 'block';
         } else {
             // No media for text-only content
