@@ -209,7 +209,7 @@
     <div class="login-box">
         <h2>Respiratory System Portal</h2>
         <input type="text" id="user-name" placeholder="Full Name">
-        <input type="text" id="group-id" placeholder="Group Name">
+        <input type="text" id="group-id" placeholder="Group Name (Blank for Admin)">
         <input type="password" id="pass-id" placeholder="Password">
         <button class="trigger-btn" style="width:100%" onclick="login()">Connect</button>
     </div>
@@ -333,11 +333,9 @@
         else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
     }
 
-    // Removed the annoying alert notification loop
     function forceFullscreenMode() {
         if (!document.fullscreenElement && currentRole === "player" && myUsername !== "") {
             enterFullScreen();
-            // Silent re-entry without alert
         }
     }
 
@@ -350,22 +348,42 @@
         }
     });
 
-    // --- MUSIC SYSTEM ---
+    // --- MUSIC SYSTEM WITH LOOP ---
     const playlist = ["UaRrDZWhtWA", "UaRrDZWhtWA", "UaRrDZWhtWA"]; 
     
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('yt-player', {
             height: '0', width: '0',
             videoId: playlist[0],
-            playerVars: { 'autoplay': 0, 'controls': 0 },
-            events: { 'onReady': () => console.log("Engine Active") }
+            playerVars: { 
+                'autoplay': 0, 
+                'controls': 0,
+                'loop': 1,
+                'playlist': playlist[0]
+            },
+            events: { 
+                'onReady': () => console.log("Engine Active"),
+                'onStateChange': onPlayerStateChange
+            }
         });
+    }
+
+    function onPlayerStateChange(event) {
+        if (event.data == YT.PlayerState.ENDED) {
+            playRandomMusic();
+        }
     }
 
     function playRandomMusic() {
         if(player && player.loadVideoById) {
             const randomID = playlist[Math.floor(Math.random() * playlist.length)];
-            player.loadVideoById(randomID);
+            player.loadVideoById({
+                videoId: randomID,
+                playerVars: {
+                    'loop': 1,
+                    'playlist': randomID
+                }
+            });
             player.playVideo();
         }
     }
@@ -458,7 +476,7 @@
         document.getElementById('close-btn').style.display = 'none';
         document.getElementById('start-btn').style.display = 'block';
         document.getElementById('start-btn').disabled = false;
-        document.getElementById('start-btn').innerText = "START NEXT QUESTION";
+        document.getElementById('start-btn').innerText = "🚀 START NEXT QUESTION";
         closeQuizOverlay();
     }
 
