@@ -109,6 +109,26 @@
             background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 20px;
             font-size: 0.9rem; color: #ecf0f1;
         }
+
+        .tap-node {
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 2px solid white;
+    cursor: pointer;
+    z-index: 15;
+    transition: transform 0.2s;
+}
+
+.tap-node:hover {
+    transform: scale(1.5);
+    box-shadow: 0 0 10px rgba(255,255,255,0.8);
+}
+
+.title-btn:hover {
+    background: #34495e;
+}
     </style>
 </head>
 <body id="main-body">
@@ -485,6 +505,66 @@
 
     function toggleRank() { document.getElementById('leaderboard').classList.toggle('minimized'); }
     window.addEventListener('beforeunload', () => socket.emit('user-leave', { username: myUsername, group: myGroup }));
+
+    // --- INTERACTIVE BUTTON LOGIC ---
+
+function showData(arg1, arg2, arg3, arg4) {
+    let title, desc, type;
+
+    // Check if the first argument is an event (some of your buttons pass 'event')
+    if (arg1 instanceof Event || (arg1 && arg1.stopPropagation)) {
+        if(arg1.stopPropagation) arg1.stopPropagation();
+        title = arg2;
+        desc = arg3;
+        type = arg4;
+    } else {
+        title = arg1;
+        desc = arg2;
+        type = arg3;
+    }
+
+    const modal = document.getElementById('modal');
+    const mTitle = document.getElementById('mTitle');
+    const mDesc = document.getElementById('mDesc');
+    const overlay = document.getElementById('overlay');
+
+    // Set Content
+    mTitle.innerText = title;
+    
+    // Logic based on 'type' (video, image, text)
+    if (type === 'video') {
+        mDesc.innerHTML = `<strong>[VIDEO CONTENT]</strong><br>${desc}<br><p style="font-size:0.8rem; color:#666;">(Video stream would load here)</p>`;
+    } else if (type === 'image') {
+        mDesc.innerHTML = `<strong>[DIAGRAM]</strong><br>${desc}<br><div style="width:100%; height:100px; background:#eee; border-radius:10px; margin-top:10px; display:flex; align-items:center; justify-content:center; color:#999;">Image Preview</div>`;
+    } else {
+        mDesc.innerText = desc;
+    }
+
+    // Show Modal
+    modal.classList.add('active');
+    overlay.style.display = 'block';
+}
+
+function closeModal() {
+    document.getElementById('modal').classList.remove('active');
+    document.getElementById('overlay').style.display = 'none';
+}
+
+// Ensure the "Respiratory System" title button also works
+document.querySelector('.title-btn').style.cssText = `
+    position: absolute;
+    top: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 15px 30px;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 20;
+`;
 </script>
 </body>
 </html>
