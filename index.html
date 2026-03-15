@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Respiratory System Interactive Mastery</title>
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
     <style>
         :root {
@@ -87,15 +87,86 @@
         .admin-controls { position: absolute; top: 15px; right: 15px; z-index: 100; display: flex; gap: 10px; }
         .trigger-btn { background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .close-quiz-btn { background: #f39c12; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; display: none; }
-        .cover-btn { position: absolute; background: #ffffff; border: 2px solid; border-radius: 6px; font-weight: 800; cursor: pointer; width: 180px; height: 45px; z-index: 10; }
 
+        /* --- ANATOMY BUTTONS --- */
+        .cover-btn {
+            position: absolute;
+            background: #ffffff; 
+            border: 2px solid;
+            border-radius: 6px;
+            font-size: clamp(8px, 1.1vw, 12px);
+            font-weight: 800;
+            cursor: pointer;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: var(--btn-shadow);
+            transition: 0.2s;
+            width: 200px; 
+            height: 50px;
+        }
+
+        .title-btn {
+            position: absolute;
+            top: 4%;
+            left: 50%;
+            transform: translateX(-50%);
+            transform-origin:center;
+            width: 500px;
+            height: 70px;
+            background: #2c3e50;
+            color: white;
+            border: 3px solid #34495e;
+            border-radius: 12px;
+            font-size: 22px;
+            font-weight: 900;
+            cursor: pointer;
+            z-index: 30;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+  
+        .cover-btn:hover, .title-btn:hover { 
+            filter: brightness(0.95);
+        }
+
+        /* --- TAP NODES --- */
+        .tap-node {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: pointer;
+            z-index: 25;
+            animation: pulse 2s infinite;
+            transform: translate(-50%, -50%);
+            transition: transform 0.2s;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0,0,0,0.4); }
+            70% { box-shadow: 0 0 0 12px rgba(0,0,0,0); }
+            100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); }
+        }
+
+        .tap-node:hover {
+            transform: translate(-50%, -50%) scale(1.5);
+            box-shadow: 0 0 10px rgba(255,255,255,0.8);
+        }
+
+        /* --- MODAL & MEDIA --- */
         .modal {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8);
-            width: 85%; max-width: 400px; background: white; padding: 20px; border-radius: 20px;
+            width: 85%; max-width: 450px; background: white; padding: 25px; border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
             visibility: hidden; opacity: 0; transition: 0.3s; z-index: 3000;
         }
         .modal.active { visibility: visible; opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        .media-box { width: 100%; height: 220px; background: #000; border-radius: 12px; margin-top: 15px; overflow: hidden; }
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; z-index: 2000; }
+        .close-btn { float: right; font-size: 30px; cursor: pointer; color: #ff4757; font-weight: bold; }
         
         #yt-player { position: absolute; width: 0; height: 0; opacity: 0; pointer-events: none; }
         
@@ -109,26 +180,6 @@
             background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 20px;
             font-size: 0.9rem; color: #ecf0f1;
         }
-
-        .tap-node {
-    position: absolute;
-    width: 15px;
-    height: 15px;
-    border-radius: 50%;
-    border: 2px solid white;
-    cursor: pointer;
-    z-index: 15;
-    transition: transform 0.2s;
-}
-
-.tap-node:hover {
-    transform: scale(1.5);
-    box-shadow: 0 0 10px rgba(255,255,255,0.8);
-}
-
-.title-btn:hover {
-    background: #34495e;
-}
     </style>
 </head>
 <body id="main-body">
@@ -180,8 +231,11 @@
 
     <div id="zoom-container" onclick="toggleZoom(event)">
         <img src="https://imgur.com/5YQmThC.png" class="base-img">
+
+        <!-- Title Button -->
         <button class="title-btn" onclick="showData('Respiratory System', 'The system responsible for taking in oxygen and expelling carbon dioxide.', 'video')">RESPIRATORY SYSTEM</button>
 
+        <!-- Left Side Buttons -->
         <button class="cover-btn" style="top: 18%; left: 8%; border-color: #ff4757; width: 160px;" onclick="showData('Nasal Cavity', 'Warms, moistens, and filters air.', 'video')">Nasal Cavity</button>
         <button class="cover-btn" style="top: 27%; left: 5%; border-color: #2ed573;" onclick="showData('Nostril', 'Entrance for air into the nasal passage.', 'text')">Nostril</button>
         <button class="cover-btn" style="top: 36%; left: 5%; border-color: #1e90ff;" onclick="showData('Soft Palate', 'Closes nasal passages during swallowing.', 'image')">Soft Palate</button>
@@ -193,6 +247,7 @@
         <button class="cover-btn" style="top: 76%; left: 3%; border-color: #26de81; width: 215px;" onclick="showData('Right Main Bronchus', 'Main passage to the right lung.', 'text')">Right Main Bronchus</button>
         <button class="cover-btn" style="top: 84%; left: 8%; border-color: #0fbcf9;" onclick="showData('Right Lung', 'The larger lung with 3 lobes.', 'image')">Right Lung</button>
 
+        <!-- Right Side Buttons -->
         <button class="cover-btn" style="top: 20%; right: 13%; border-color: #ef5777; width: 180px;" onclick="showData('Pharyngeal Tonsil', 'Adenoids that filter out bacteria.', 'image')">Pharyngeal Tonsil</button>
         <button class="cover-btn" style="top: 28%; right: 13%; border-color: #575fcf; width: 160px;" onclick="showData('Nasopharynx', 'Upper throat area.', 'video')">Nasopharynx</button>
         <button class="cover-btn" style="top: 36%; right: 13%; border-color: #05c46b; width: 160px;" onclick="showData('Oropharynx', 'Middle part of the throat.', 'text')">Oropharynx</button>
@@ -205,6 +260,7 @@
         <button class="cover-btn" style="top: 82%; right: 10%; border-color: #0be881;" onclick="showData('Left Lung', 'Contains the cardiac notch.', 'video')">Left Lung</button>
         <button class="cover-btn" style="top: 89%; right: 10%; border-color: #222f3e;" onclick="showData('Diaphragm', 'Primary muscle for inhalation.', 'video')">Diaphragm</button>
 
+        <!-- Tap Nodes (20 Total) -->
         <div class="tap-node" style="top: 37%; left: 42%; background: #ff4757;" onclick="showData('Nasal Point', 'Focus on cilia filtration.', 'image')"></div>
         <div class="tap-node" style="top: 39%; left: 38%; background: #2ed573;" onclick="showData('Nostril Tip', 'Outer air intake.', 'video')"></div>
         <div class="tap-node" style="top: 41%; left: 46%; background: #1e90ff;" onclick="showData('Soft Palate Tip', 'Back roof of mouth.', 'image')"></div>
@@ -227,14 +283,15 @@
     </div>
 </div>
 
-
 <div class="modal" id="modal">
-    <span style="float:right; cursor:pointer; color:red; font-size: 1.5rem;" onclick="closeModal()">×</span>
-    <h2 id="mTitle"></h2>
-    <p id="mDesc"></p>
+    <span class="close-btn" onclick="closeModal()">×</span>
+    <h2 id="mTitle">Title</h2>
+    <p id="mDesc">Description</p>
+    <div class="media-box" id="mediaBox"></div>
 </div>
 
 <script>
+    // --- SOCKET & STATE ---
     const socket = io();
     let currentRole = "player";
     let myUsername = "";
@@ -246,8 +303,9 @@
     let currentQuestionData = null;
     let hasSubmitted = false;
     let groupSelections = [];
+    let player;
 
-    // --- REPEAT FULLSCREEN ENFORCER ---
+    // --- FULLSCREEN ENFORCER ---
     function enterFullScreen() {
         const elem = document.documentElement;
         if (elem.requestFullscreen) elem.requestFullscreen();
@@ -258,7 +316,6 @@
     function forceFullscreenMode() {
         if (!document.fullscreenElement && currentRole === "player" && myUsername !== "") {
             enterFullScreen();
-            // Using alert to block until they interact, then re-trigger
             alert("Fullscreen exit detected! Re-entering system...");
             setTimeout(forceFullscreenMode, 1000); 
         }
@@ -266,7 +323,6 @@
 
     document.addEventListener('fullscreenchange', forceFullscreenMode);
     
-    // Keybinds: F to enter manually, E to exit (only if leader)
     document.addEventListener('keydown', (e) => {
         if (e.key.toLowerCase() === 'f') enterFullScreen();
         if (e.key.toLowerCase() === 'e' && currentRole === "leader") {
@@ -275,7 +331,6 @@
     });
 
     // --- MUSIC SYSTEM ---
-    let player;
     const playlist = ["UaRrDZWhtWA", "UaRrDZWhtWA", "UaRrDZWhtWA"]; 
     
     function onYouTubeIframeAPIReady() {
@@ -325,16 +380,27 @@
         socket.emit('user-join', { username: name, group: group, role: currentRole });
     }
 
+    // --- ANATOMY INTERACTIONS ---
     function toggleZoom(e) { 
         if(e.target.classList.contains('base-img')) {
             document.getElementById('zoom-container').classList.toggle('zoomed'); 
         }
     }
 
-    function showData(e, title, desc) {
-        if(e) e.stopPropagation(); 
+    function showData(title, desc, type) {
+        event.stopPropagation();
         document.getElementById('mTitle').innerText = title;
         document.getElementById('mDesc').innerText = desc;
+        const mediaBox = document.getElementById('mediaBox');
+        
+        if(type === 'video') {
+            mediaBox.innerHTML = '<iframe width="100%" height="100%" src="https://www.youtube.com/embed/mOKmjYwfDGU" frameborder="0" allowfullscreen></iframe>';
+        } else if(type === 'image') {
+            mediaBox.innerHTML = '<img src="https://picsum.photos/seed/'+title+'/400/300" style="width:100%; height:100%; object-fit:cover;">';
+        } else {
+            mediaBox.innerHTML = '<div style="padding:20px; color:white; text-align:center; background:#34495e; height:100%; box-sizing:border-box; display:flex; align-items:center; justify-content:center; border-radius:12px;">Information for ' + title + ' is being displayed.</div>';
+        }
+
         document.getElementById('modal').classList.add('active');
         document.getElementById('overlay').style.display = 'block';
     }
@@ -444,14 +510,11 @@
         groupSelections = data.selectionsSoFar;
         document.getElementById('clicks-remaining').innerText = `Selections: ${groupSelections.length}/${data.maxClicks}`;
         
-        // --- SYNCED STOP TRIGGER ---
         if(groupSelections.length >= data.maxClicks) {
-            // Send signal to server to tell everyone to stop clocks
             socket.emit('trigger-global-stop');
         }
     });
 
-    // Receiver for the global stop command
     socket.on('receive-global-stop', () => {
         if (currentCountdown) {
             clearInterval(currentCountdown);
@@ -468,7 +531,7 @@
     }
 
     function handleTimeUp() {
-        if(!quizActive) return; // Prevent double trigger
+        if(!quizActive) return;
         quizActive = false;
         stopMusic();
         currentQuestionData.correctIndices.forEach(idx => {
@@ -505,66 +568,6 @@
 
     function toggleRank() { document.getElementById('leaderboard').classList.toggle('minimized'); }
     window.addEventListener('beforeunload', () => socket.emit('user-leave', { username: myUsername, group: myGroup }));
-
-    // --- INTERACTIVE BUTTON LOGIC ---
-
-function showData(arg1, arg2, arg3, arg4) {
-    let title, desc, type;
-
-    // Check if the first argument is an event (some of your buttons pass 'event')
-    if (arg1 instanceof Event || (arg1 && arg1.stopPropagation)) {
-        if(arg1.stopPropagation) arg1.stopPropagation();
-        title = arg2;
-        desc = arg3;
-        type = arg4;
-    } else {
-        title = arg1;
-        desc = arg2;
-        type = arg3;
-    }
-
-    const modal = document.getElementById('modal');
-    const mTitle = document.getElementById('mTitle');
-    const mDesc = document.getElementById('mDesc');
-    const overlay = document.getElementById('overlay');
-
-    // Set Content
-    mTitle.innerText = title;
-    
-    // Logic based on 'type' (video, image, text)
-    if (type === 'video') {
-        mDesc.innerHTML = `<strong>[VIDEO CONTENT]</strong><br>${desc}<br><p style="font-size:0.8rem; color:#666;">(Video stream would load here)</p>`;
-    } else if (type === 'image') {
-        mDesc.innerHTML = `<strong>[DIAGRAM]</strong><br>${desc}<br><div style="width:100%; height:100px; background:#eee; border-radius:10px; margin-top:10px; display:flex; align-items:center; justify-content:center; color:#999;">Image Preview</div>`;
-    } else {
-        mDesc.innerText = desc;
-    }
-
-    // Show Modal
-    modal.classList.add('active');
-    overlay.style.display = 'block';
-}
-
-function closeModal() {
-    document.getElementById('modal').classList.remove('active');
-    document.getElementById('overlay').style.display = 'none';
-}
-
-// Ensure the "Respiratory System" title button also works
-document.querySelector('.title-btn').style.cssText = `
-    position: absolute;
-    top: 5%;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 15px 30px;
-    background: #2c3e50;
-    color: white;
-    border: none;
-    border-radius: 50px;
-    font-weight: bold;
-    cursor: pointer;
-    z-index: 20;
-`;
 </script>
 </body>
 </html>
