@@ -416,17 +416,21 @@
                 'autoplay': 0, 
                 'controls': 0,
                 'loop': 1,
-                'playlist': playlist[0]
+                'playlist': playlist.join(',')
             },
             events: { 
-                'onReady': () => console.log("Engine Active"),
+                'onReady': onPlayerReady,
                 'onStateChange': onPlayerStateChange
             }
         });
     }
 
+    function onPlayerReady(event) {
+        console.log("YouTube Player Ready");
+    }
+
     function onPlayerStateChange(event) {
-        if (event.data == YT.PlayerState.ENDED) {
+        if (event.data === YT.PlayerState.ENDED) {
             playRandomMusic();
         }
     }
@@ -436,16 +440,18 @@
             const randomID = playlist[Math.floor(Math.random() * playlist.length)];
             player.loadVideoById({
                 videoId: randomID,
-                playerVars: {
-                    'loop': 1,
-                    'playlist': randomID
-                }
+                startSeconds: 0,
+                suggestedQuality: 'small'
             });
             player.playVideo();
         }
     }
 
-    function stopMusic() { if(player && player.stopVideo) player.stopVideo(); }
+    function stopMusic() { 
+        if(player && player.stopVideo) {
+            player.stopVideo();
+        } 
+    }
 
     // --- LOGIN ---
     function login() {
