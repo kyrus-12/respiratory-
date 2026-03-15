@@ -117,7 +117,7 @@
 
 <div id="login-screen">
     <div class="login-box">
-        <h2>AIGHAM Portal</h2>
+        <h2>Respiratory System Portal</h2>
         <input type="text" id="user-name" placeholder="Full Name">
         <input type="text" id="group-id" placeholder="Group Name (Blank for Admin)">
         <input type="password" id="pass-id" placeholder="Password">
@@ -130,7 +130,7 @@
     <div id="p-score-board" style="font-size: 4rem; color: var(--success); font-weight: bold;">0</div>
     <p id="group-display" style="font-weight:bold; color:#ecf0f1;"></p>
     <p>System: Locked in Full Screen</p>
-    <div class="group-indicator" id="group-members-count">Waiting for group members...</div>
+    <div class="group-indicator" id="group-members-count">Waiting...</div>
 </div>
 
 <div id="quiz-overlay">
@@ -147,15 +147,15 @@
 <div class="wrapper" id="main-wrapper">
     <div id="leaderboard" onclick="if(this.classList.contains('minimized')) toggleRank()">
         <div class="rank-header">
-            <h3>Rankings</h3>
+            <h3>Points</h3>
             <button onclick="event.stopPropagation(); toggleRank()" style="cursor:pointer; background:none; border:none; font-weight:bold;">–</button>
         </div>
         <div id="rank-list" class="rank-content"></div>
     </div>
 
     <div class="admin-controls" id="admin-ui" style="display:none;">
-        <button id="start-btn" class="trigger-btn" onclick="startNewQuestion()">🚀 START NEXT QUESTION</button>
-        <button id="close-btn" class="close-quiz-btn" onclick="adminCloseQuiz()">🛑 CLOSE MODAL</button>
+        <button id="start-btn" class="trigger-btn" onclick="startNewQuestion()">START</button>
+        <button id="close-btn" class="close-quiz-btn" onclick="adminCloseQuiz()">CLOSE</button>
     </div>
 
     <div id="zoom-container" onclick="toggleZoom(event)">
