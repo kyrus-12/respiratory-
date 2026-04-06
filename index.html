@@ -552,7 +552,7 @@ function speak(text) {
                  onerror="this.src='https://picsum.photos/600/400'">`;
         mediaBox.style.display = 'block';
     } else {
-        mDesc.innerText = desc || '';
+        mDesc.innerHTML = desc || '';
         mDesc.style.display = desc ? 'block' : 'none';
 
         if (type === 'video') {
