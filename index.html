@@ -506,37 +506,39 @@
 
     // FIXED: Properly handle all content types - only show what's provided
     function showData(title, desc, type) {
-        event.stopPropagation();
-        
-        const mTitle = document.getElementById('mTitle');
-        const mDesc = document.getElementById('mDesc');
-        const mediaBox = document.getElementById('mediaBox');
-        
-        // Always show title and description
-        mTitle.innerText = title;
+    event.stopPropagation();
+    
+    const mTitle = document.getElementById('mTitle');
+    const mDesc = document.getElementById('mDesc');
+    const mediaBox = document.getElementById('mediaBox');
+    
+    mTitle.innerText = title;
+    
+    // Check if 'desc' is actually a URL
+    const isUrl = desc && (desc.startsWith('http') || desc.includes('imgur'));
+    
+    if (isUrl) {
+        mDesc.style.display = 'none'; // Hide text if it's just a URL
+        mediaBox.innerHTML = `<img src="${desc}" style="width:100%; height:100%; object-fit:contain;" onerror="this.src='https://picsum.photos/400/300'">`;
+        mediaBox.style.display = 'block';
+    } else {
         mDesc.innerText = desc || '';
         mDesc.style.display = desc ? 'block' : 'none';
-        
-        // Clear previous media content
-        mediaBox.innerHTML = '';
-        
-        // Only show media if type is specified
+
         if (type === 'video') {
             mediaBox.innerHTML = '<iframe width="100%" height="100%" src="https://www.youtube.com/embed/mOKmjYwfDGU" frameborder="0" allowfullscreen></iframe>';
             mediaBox.style.display = 'block';
         } else if (type === 'image') {
-            // FIXED: Using picsum.photos (reliable placeholder) instead of potentially broken Imgur
-            // Replace with your own CDN or local images for production
-            mediaBox.innerHTML = '<img src="https://picsum.photos/seed/' + encodeURIComponent(title) + '/400/300" style="width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.innerHTML=\'<div class=img-fallback>Image unavailable</div>\'">';
+            mediaBox.innerHTML = `<img src="https://picsum.photos/seed/${encodeURIComponent(title)}/400/300" style="width:100%; height:100%; object-fit:cover;">`;
             mediaBox.style.display = 'block';
         } else {
-            // No media for text-only content
             mediaBox.style.display = 'none';
         }
-
-        document.getElementById('modal').classList.add('active');
-        document.getElementById('overlay').style.display = 'block';
     }
+
+    document.getElementById('modal').classList.add('active');
+    document.getElementById('overlay').style.display = 'block';
+}
 
     function closeModal() {
         document.getElementById('modal').classList.remove('active');
