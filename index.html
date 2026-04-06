@@ -518,13 +518,12 @@
     
     if (isUrl) {
         mDesc.style.display = 'none';
-        // Updated Styles: 
-        // 1. width/height: 100% fills the container
-        // 2. object-fit: cover ensures it fills the space (may crop edges slightly to prevent stretching)
-        // 3. min-height: 300px (or whatever you prefer) ensures the box doesn't collapse
+        // width: 100% makes it as wide as the screen/modal allows
+        // height: auto ensures it stays proportional (no stretching or cropping)
+        // max-height prevents it from being taller than the phone screen
         mediaBox.innerHTML = `
             <img src="${desc}" 
-                 style="width:100%; height:100%; min-height:350px; object-fit:cover; display:block;" 
+                 style="width: 100%; height: auto; max-height: 70vh; object-fit: contain; display: block; margin: 0 auto;" 
                  onerror="this.src='https://picsum.photos/600/400'">`;
         mediaBox.style.display = 'block';
     } else {
@@ -532,11 +531,10 @@
         mDesc.style.display = desc ? 'block' : 'none';
 
         if (type === 'video') {
-            mediaBox.innerHTML = '<iframe width="100%" height="350px" src="https://www.youtube.com/embed/mOKmjYwfDGU" frameborder="0" allowfullscreen></iframe>';
+            mediaBox.innerHTML = '<iframe width="100%" height="300px" src="https://www.youtube.com/embed/mOKmjYwfDGU" frameborder="0" allowfullscreen></iframe>';
             mediaBox.style.display = 'block';
         } else if (type === 'image') {
-            // Using cover here as well for the fallback/placeholder
-            mediaBox.innerHTML = `<img src="https://picsum.photos/seed/${encodeURIComponent(title)}/600/400" style="width:100%; height:100%; min-height:350px; object-fit:cover;">`;
+            mediaBox.innerHTML = `<img src="https://picsum.photos/seed/${encodeURIComponent(title)}/600/400" style="width: 100%; height: auto; max-height: 70vh; object-fit: contain;">`;
             mediaBox.style.display = 'block';
         } else {
             mediaBox.style.display = 'none';
@@ -546,7 +544,7 @@
     document.getElementById('modal').classList.add('active');
     document.getElementById('overlay').style.display = 'block';
 }
-
+    
     function closeModal() {
         document.getElementById('modal').classList.remove('active');
         document.getElementById('overlay').style.display = 'none';
