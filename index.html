@@ -514,22 +514,29 @@
     
     mTitle.innerText = title;
     
-    // Check if 'desc' is actually a URL
     const isUrl = desc && (desc.startsWith('http') || desc.includes('imgur'));
     
     if (isUrl) {
-        mDesc.style.display = 'none'; // Hide text if it's just a URL
-        mediaBox.innerHTML = `<img src="${desc}" style="width:100%; height:100%; object-fit:contain;" onerror="this.src='https://picsum.photos/400/300'">`;
+        mDesc.style.display = 'none';
+        // Updated Styles: 
+        // 1. width/height: 100% fills the container
+        // 2. object-fit: cover ensures it fills the space (may crop edges slightly to prevent stretching)
+        // 3. min-height: 300px (or whatever you prefer) ensures the box doesn't collapse
+        mediaBox.innerHTML = `
+            <img src="${desc}" 
+                 style="width:100%; height:100%; min-height:350px; object-fit:cover; display:block;" 
+                 onerror="this.src='https://picsum.photos/600/400'">`;
         mediaBox.style.display = 'block';
     } else {
         mDesc.innerText = desc || '';
         mDesc.style.display = desc ? 'block' : 'none';
 
         if (type === 'video') {
-            mediaBox.innerHTML = '<iframe width="100%" height="100%" src="https://www.youtube.com/embed/mOKmjYwfDGU" frameborder="0" allowfullscreen></iframe>';
+            mediaBox.innerHTML = '<iframe width="100%" height="350px" src="https://www.youtube.com/embed/mOKmjYwfDGU" frameborder="0" allowfullscreen></iframe>';
             mediaBox.style.display = 'block';
         } else if (type === 'image') {
-            mediaBox.innerHTML = `<img src="https://picsum.photos/seed/${encodeURIComponent(title)}/400/300" style="width:100%; height:100%; object-fit:cover;">`;
+            // Using cover here as well for the fallback/placeholder
+            mediaBox.innerHTML = `<img src="https://picsum.photos/seed/${encodeURIComponent(title)}/600/400" style="width:100%; height:100%; min-height:350px; object-fit:cover;">`;
             mediaBox.style.display = 'block';
         } else {
             mediaBox.style.display = 'none';
