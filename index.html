@@ -426,14 +426,24 @@
         }
     }
 
-    document.addEventListener('fullscreenchange', forceFullscreenMode);
-    
     document.addEventListener('keydown', (e) => {
-        if (e.key.toLowerCase() === 'f') enterFullScreen();
-        if (e.key.toLowerCase() === 'e' && currentRole === "leader") {
-            if (document.exitFullscreen) document.exitFullscreen();
+    if (e.key.toLowerCase() === 'f') enterFullScreen();
+    
+    // This allows the leader to exit, but players remain trapped by forceFullscreenMode
+    if (e.key.toLowerCase() === 'e' && currentRole === "leader") {
+        // Remove the listener temporarily so it doesn't force you back in
+        document.removeEventListener('fullscreenchange', forceFullscreenMode);
+        
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
         }
-    });
+        
+        // Re-add it after a short delay if you want it active again later
+        setTimeout(() => {
+            document.addEventListener('fullscreenchange', forceFullscreenMode);
+        }, 2000);
+    }
+});
 
     // --- MUSIC SYSTEM WITH LOOP ---
     const playlist = ["UaRrDZWhtWA", "UaRrDZWhtWA", "UaRrDZWhtWA"]; 
