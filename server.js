@@ -42,6 +42,11 @@ io.on('connection', (socket) => {
         io.emit('show-quiz-overlay', quizData);
     });
 
+    socket.on('admin-force-next', () => {
+    io.emit('receive-global-stop'); // Forces everyone to handleTimeUp immediately
+    io.emit('hide-quiz-overlay');   // Closes everyone's window
+});
+
     // --- NEW: GLOBAL STOP HANDLER ---
     // This catches the signal from index.html and broadcasts it to EVERYONE
     socket.on('trigger-global-stop', () => {
