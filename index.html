@@ -495,31 +495,50 @@
 
     // --- LOGIN ---
     function login() {
-        const name = document.getElementById('user-name').value;
-        const group = document.getElementById('group-id').value;
-        const pass = document.getElementById('pass-id').value;
-        if(!name || !pass) return alert("Please fill credentials");
+    const name = document.getElementById('user-name').value;
+    const group = document.getElementById('group-id').value;
+    const pass = document.getElementById('pass-id').value;
+    
+    if(!name || !pass) return alert("Please fill credentials");
 
-        enterFullScreen();
+    enterFullScreen();
 
-        if(group.trim() === "") {
-            if(pass !== "renz123") return alert("Admin Password Incorrect");
+    if(group.trim() === "") {
+        // --- ADMIN CHECK ---
+        if (pass === "renz123") {
+            // Full Admin: Has everything
             currentRole = "leader";
             document.getElementById('admin-ui').style.display = 'flex';
             document.getElementById('leaderboard').style.display = 'block';
             document.getElementById('leader-close-x').style.display = 'block';
-        } else {
-            currentRole = "player";
-            myGroup = group;
-            document.getElementById('group-display').innerText = "GROUP: " + group;
-            document.getElementById('waiting-screen').style.display = 'flex';
-            document.getElementById('leader-close-x').style.display = 'none';
+        } 
+        else if (pass === "view123") { 
+            // New Viewer Admin: No leaderboard, No start buttons
+            currentRole = "leader"; 
+            document.getElementById('admin-ui').style.display = 'none'; // Hides Start Quiz buttons
+            document.getElementById('leaderboard').style.display = 'none'; // Hides Leaderboard
+            document.getElementById('leader-close-x').style.display = 'block';
+            console.log("Logged in as Viewer Admin (No Quiz Controls)");
+        } 
+        else {
+            return alert("Admin Password Incorrect");
         }
-        myUsername = name;
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('main-wrapper').style.display = 'block';
-        socket.emit('user-join', { username: name, group: group, role: currentRole });
+    } else {
+        // --- PLAYER LOGIN ---
+        currentRole = "player";
+        myGroup = group;
+        document.getElementById('group-display').innerText = "GROUP: " + group;
+        document.getElementById('waiting-screen').style.display = 'flex';
+        document.getElementById('leader-close-x').style.display = 'none';
     }
+
+    myUsername = name;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('main-wrapper').style.display = 'block';
+    
+    // Tell the server we joined
+    socket.emit('user-join', { username: name, group: group, role: currentRole });
+}
 
     // --- ANATOMY INTERACTIONS ---
     function toggleZoom(e) { 
