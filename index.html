@@ -445,6 +445,20 @@
     }
 });
 
+    function manualExit() {
+    // Remove the force listener so it doesn't pull you back in
+    document.removeEventListener('fullscreenchange', forceFullscreenMode);
+    
+    if (document.exitFullscreen) {
+        document.exitFullscreen();
+    }
+    
+    // Optional: Re-enable it after 5 seconds
+    setTimeout(() => {
+        document.addEventListener('fullscreenchange', forceFullscreenMode);
+    }, 5000);
+}
+
     // --- MUSIC SYSTEM WITH LOOP ---
     const playlist = ["UaRrDZWhtWA", "UaRrDZWhtWA", "UaRrDZWhtWA"]; 
     
