@@ -718,53 +718,41 @@ function speak(text) {
     });
 
     socket.on('receive-global-stop', () => {
-    console.log("Global stop received: Resetting quiz state.");
-    if (currentCountdown) {
-        clearInterval(currentCountdown);
-        currentCountdown = null;
-    }
-    // This function will reset the "IN PROGRESS" button back to "START"
-    handleTimeUp(); 
-});
+        if (currentCountdown) {
+          clearInterval(currentCountdown);
+          handleTimeUp();
+      }
+    });
 
-    function submitPoints() {
-        hasSubmitted = true;
-        let correctCount = groupSelections.filter(idx => currentQuestionData.correctIndices.includes(idx)).length;
-        myScore += (correctCount * 10);
-        document.getElementById('p-score-board').innerText = myScore;
-        socket.emit('score-update', { group: myGroup, score: myScore });
-    }
 
-    function handleTimeUp() {
+
+function submitPoints() {
+    hasSubmitted = true;
+    let correctCount = groupSelections.filter(idx => currentQuestionData.correctIndices.includes(idx)).length;
+    myScore += (correctCount * 10);
+    document.getElementById('p-score-board').innerText = myScore;
+    socket.emit('score-update', { group: myGroup, score: myScore });
+}
+
+
+function handleTimeUp() {
     if(!quizActive) return;
     quizActive = false;
     stopMusic();
-
-    // --- FIX: Reset the "IN PROGRESS..." button back to "START" ---
-    // Make sure '.start-btn' matches the class name of your actual button
-    const startBtn = document.querySelector('.start-btn') || document.getElementById('start-quiz-btn');
-    if(startBtn) {
-        startBtn.innerText = "START";
-        startBtn.disabled = false;
-        startBtn.style.opacity = "1"; // Ensures it looks clickable again
-    }
-
     currentQuestionData.correctIndices.forEach(idx => {
         const btn = document.getElementById("opt-" + idx);
         if(btn) btn.classList.add('correct-answer');
     });
-
     document.getElementById('status-text').innerText = "Answer checking complete!";
-    
     if(currentRole === "player") {
         if(!hasSubmitted) submitPoints();
         setTimeout(closeQuizOverlay, 4000);
     } else {
-        // For the Leader, show the close button so they can manually end the view
-        const closeBtn = document.getElementById('close-btn');
-        if(closeBtn) closeBtn.style.display = 'block';
+        document.getElementById('close-btn').style.display = 'block';
     }
 }
+
+
 
     socket.on('update-leaderboard', (leaderboard) => {
         if(currentRole !== "leader") return;
