@@ -619,11 +619,33 @@ function speak(text) {
     }
 
     function closeQuizOverlay() {
-        if(currentCountdown) clearInterval(currentCountdown);
-        document.getElementById('quiz-overlay').style.display = 'none';
-        quizActive = false;
-        stopMusic();
+    // 1. STOP THE TIMER & CLEAR THE VARIABLE
+    if (currentCountdown) {
+        clearInterval(currentCountdown);
+        currentCountdown = null; // Clears the reference so it's fresh for next time
     }
+
+    // 2. RESET THE LOGIC FLAGS
+    quizActive = false;
+    hasSubmitted = false; // CRITICAL: If you don't reset this, you won't get points on the next question
+    
+    // 3. HIDE THE UI
+    const overlay = document.getElementById('quiz-overlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+
+    // 4. RESET THE OPTIONS BOX (Prevents old buttons from staying in memory)
+    const optionsBox = document.getElementById('quiz-options');
+    if (optionsBox) {
+        optionsBox.innerHTML = "";
+    }
+
+    // 5. STOP MUSIC (From your original version)
+    stopMusic();
+
+    console.log("Quiz Logic Reset: Ready for next question.");
+}
 
     socket.on('show-quiz-overlay', (data) => {
         quizActive = true;
