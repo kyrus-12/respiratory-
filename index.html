@@ -421,10 +421,15 @@
     }
 
     function forceFullscreenMode() {
-        if (!document.fullscreenElement && currentRole === "player" && myUsername !== "") {
-            enterFullScreen();
-        }
+    // Check if the user is currently clicking/typing in an input box
+    const isTyping = document.activeElement.tagName === 'INPUT' || 
+                     document.activeElement.tagName === 'TEXTAREA';
+
+    // Only force fullscreen if they AREN'T typing and are a player
+    if (!document.fullscreenElement && currentRole === "player" && myUsername !== "" && !isTyping) {
+        enterFullScreen();
     }
+}
 
     document.addEventListener('keydown', (e) => {
     if (e.key.toLowerCase() === 'f') enterFullScreen();
