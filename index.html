@@ -619,32 +619,36 @@ function speak(text) {
     }
 
     function closeQuizOverlay() {
-    // 1. STOP THE TIMER & CLEAR THE VARIABLE
+    // 1. STOP THE TIMER
     if (currentCountdown) {
         clearInterval(currentCountdown);
-        currentCountdown = null; // Clears the reference so it's fresh for next time
+        currentCountdown = null;
     }
 
     // 2. RESET THE LOGIC FLAGS
     quizActive = false;
-    hasSubmitted = false; // CRITICAL: If you don't reset this, you won't get points on the next question
+    hasSubmitted = false;
     
-    // 3. HIDE THE UI
+    // 3. RESET THE BUTTON UI (This fixes your screenshot issue)
+    const startBtn = document.querySelector('.start-btn'); // Or whatever class/ID your Start button uses
+    if (startBtn) {
+        startBtn.innerText = "START";
+        startBtn.disabled = false;
+        startBtn.style.backgroundColor = ""; // Resets to original color
+    }
+
+    // 4. HIDE THE UI
     const overlay = document.getElementById('quiz-overlay');
-    if (overlay) {
-        overlay.style.display = 'none';
-    }
+    if (overlay) overlay.style.display = 'none';
 
-    // 4. RESET THE OPTIONS BOX (Prevents old buttons from staying in memory)
+    // 5. RESET THE OPTIONS BOX
     const optionsBox = document.getElementById('quiz-options');
-    if (optionsBox) {
-        optionsBox.innerHTML = "";
-    }
+    if (optionsBox) optionsBox.innerHTML = "";
 
-    // 5. STOP MUSIC (From your original version)
+    // 6. STOP MUSIC
     stopMusic();
 
-    console.log("Quiz Logic Reset: Ready for next question.");
+    console.log("Quiz Logic Reset: Button is now clickable again.");
 }
 
     socket.on('show-quiz-overlay', (data) => {
