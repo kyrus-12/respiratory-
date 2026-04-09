@@ -281,35 +281,7 @@
     background-color: rgba(241, 196, 15, 0.2);
     border-radius: 4px;
 }
-
-        #quiz-overlay {
-    /* Ensure the overlay itself doesn't exceed the screen */
-    max-height: 90vh; 
-    overflow-y: hidden; /* Hide scroll on the main container */
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-    /* ... your existing styles (position: fixed, etc.) ... */
-}
-
-#quiz-options {
-    /* This makes the options area scrollable */
-    max-height: 60vh; /* Adjust this percentage based on your needs */
-    overflow-y: auto;  /* Adds scrollbar only when needed */
-    padding-right: 10px; /* Space for the scrollbar */
-    
-    /* Optional: Smooth scrolling for a better feel */
-    scroll-behavior: smooth;
-}
-
-/* Custom scrollbar styling (Optional, for a cleaner look) */
-#quiz-options::-webkit-scrollbar {
-    width: 8px;
-}
-#quiz-options::-webkit-scrollbar-thumb {
-    background: #f1c40f; 
-    border-radius: 10px;
-}
+        
     </style>
 </head>
 <body id="main-body">
