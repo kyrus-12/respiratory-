@@ -505,7 +505,7 @@
     enterFullScreen();
 
     if(group.trim() === "") {
-        // --- ADMIN CHECK ---
+        // --- ADMIN / VIEWER CHECK ---
         if (pass === "renz123") {
             // Full Admin: Has everything
             currentRole = "leader";
@@ -513,16 +513,28 @@
             document.getElementById('leaderboard').style.display = 'block';
             document.getElementById('leader-close-x').style.display = 'block';
         } 
+        else if (pass === "sciences") { 
+            // VIEWER MODE: Hide the side buttons (labels), keep tap nodes
+            currentRole = "viewer"; 
+            document.getElementById('admin-ui').style.display = 'none';
+            document.getElementById('leaderboard').style.display = 'none';
+            document.getElementById('leader-close-x').style.display = 'none';
+            
+            // Hide all anatomy label buttons
+            const labelButtons = document.querySelectorAll('.cover-btn');
+            labelButtons.forEach(btn => btn.style.display = 'none');
+            
+            console.log("Logged in as Viewer (Nodes Only)");
+        }
         else if (pass === "sciences3") { 
-            // New Viewer Admin: No leaderboard, No start buttons
+            // Previous Viewer Admin logic
             currentRole = "leader"; 
-            document.getElementById('admin-ui').style.display = 'none'; // Hides Start Quiz buttons
-            document.getElementById('leaderboard').style.display = 'none'; // Hides Leaderboard
+            document.getElementById('admin-ui').style.display = 'none';
+            document.getElementById('leaderboard').style.display = 'none';
             document.getElementById('leader-close-x').style.display = 'block';
-            console.log("Logged in as Viewer Admin (No Quiz Controls)");
         } 
         else {
-            return alert("Admin Password Incorrect");
+            return alert("Password Incorrect");
         }
     } else {
         // --- PLAYER LOGIN ---
@@ -537,17 +549,9 @@
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('main-wrapper').style.display = 'block';
     
-    // Tell the server we joined
     socket.emit('user-join', { username: name, group: group, role: currentRole });
 }
-
-    // --- ANATOMY INTERACTIONS ---
-    function toggleZoom(e) { 
-        if(e.target.classList.contains('base-img')) {
-            document.getElementById('zoom-container').classList.toggle('zoomed'); 
-        }
-    }
-
+    
     // Function to handle Text-to-Speech
 function speak(text) {
     // Cancel any ongoing speech first
